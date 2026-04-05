@@ -120,7 +120,7 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
                     : "bg-blue-50 text-blue-600 border border-blue-100"
                 }`}
               >
-                For Business
+                Solution
               </div>
 
               <h1

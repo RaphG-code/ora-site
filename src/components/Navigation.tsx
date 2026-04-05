@@ -125,7 +125,7 @@ const Navigation: React.FC<NavigationProps> = ({
                   : "text-black hover:text-black hover:bg-gray-100/70",
             ].join(" ")}
           >
-            For Business
+            Solution
           </button>
         </div>
 
@@ -209,7 +209,7 @@ const Navigation: React.FC<NavigationProps> = ({
                   : dk ? "text-gray-300 hover:bg-white/[0.06]" : "text-black hover:bg-gray-50",
               ].join(" ")}
             >
-              For Business
+              Solution
             </button>
             <button
               onClick={() => {
