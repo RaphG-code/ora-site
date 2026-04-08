@@ -239,7 +239,7 @@ export default function HeroOrbitAnimation({ dk }: { dk: boolean }) {
               scale:   { type: "spring", stiffness: 280, damping: 22 },
               opacity: { duration: 0.35 },
               filter:  { duration: 0.5, ease: "easeOut" },
-              exit:    { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
+              // exit handled via animate prop
             }}
           >
             {/* Glow très doux derrière */}

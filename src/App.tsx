@@ -943,9 +943,9 @@ const App = () => {
   };
 
   const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") return "dark";
+    if (typeof window === "undefined") return "light";
     const stored = window.localStorage.getItem("theme");
-    return stored === "light" ? "light" : "dark";
+    return stored === "dark" ? "dark" : "light";
   });
 
   const benefitsRef = useRef<HTMLElement | null>(null);
@@ -1144,9 +1144,9 @@ const App = () => {
 
   return (
     <div
-      className={`min-h-screen text-black dark:text-white transition-colors duration-300 ease-in-out ${theme === "light"
-        ? "bg-white"
-        : "bg-white dark:bg-background"
+      className={`min-h-screen text-[#111827] dark:text-white transition-colors duration-300 ease-in-out ${theme === "light"
+        ? "bg-[#fcfbf7]"
+        : "bg-background"
         }`}
     >
       <style>{bubbleStyles}</style>

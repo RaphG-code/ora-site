@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Moon, Sun, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 type NavigationProps = {
   theme: "light" | "dark";
@@ -10,14 +10,12 @@ type NavigationProps = {
 };
 
 const links = [
-  { label: "Features", id: "features" },
-  { label: "How it works", id: "how-it-works" },
-  { label: "Pricing", id: "pricing" },
+  { label: "Fonctionnalités", id: "features" },
+  { label: "Comment ça marche", id: "how-it-works" },
+  { label: "Tarifs", id: "pricing" },
 ];
 
 const Navigation: React.FC<NavigationProps> = ({
-  theme,
-  onToggleTheme,
   onBookCall,
   currentPage,
   onNavigate,
@@ -46,7 +44,6 @@ const Navigation: React.FC<NavigationProps> = ({
     setMobileOpen(false);
     if (currentPage !== "home") {
       onNavigate("home");
-      // Give the page time to mount before scrolling
       setTimeout(() => {
         const lenis = (window as any).__lenis;
         if (lenis) lenis.scrollTo(`#${id}`);
@@ -59,21 +56,18 @@ const Navigation: React.FC<NavigationProps> = ({
     }
   };
 
-  const dk = theme === "dark";
-
   return (
     <header
       className={[
         "fixed top-0 inset-x-0 z-50 transition-all duration-300",
         scrolled
-          ? dk
-            ? "bg-[#020617]/80 backdrop-blur-xl border-b border-white/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
-            : "bg-white/70 backdrop-blur-xl border-b border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+          ? "bg-[#fcfbf7]/90 backdrop-blur-xl border-b border-gray-200/70 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
           : "bg-transparent",
       ].join(" ")}
     >
-      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 lg:px-10 h-16">
-        {/* Logo */}
+      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 lg:px-10 h-[68px]">
+
+        {/* ── Logo ──────────────────────────────────────────── */}
         <button
           onClick={() => {
             if (currentPage === "home") {
@@ -82,32 +76,28 @@ const Navigation: React.FC<NavigationProps> = ({
                 lenis.start();
                 lenis.scrollTo(0, { immediate: true });
               }
-              // Force native scroll as well — handles edge cases
               window.scrollTo({ top: 0 });
             } else {
               onNavigate("home");
             }
           }}
-          className={[
-            "text-[22px] font-thin tracking-[-0.04em] transition-colors",
-            dk ? "text-white" : "text-black",
-          ].join(" ")}
+          className="flex-shrink-0"
+          aria-label="Ora — Accueil"
         >
-          Ora
+          <img
+            src="/logos/logo-color-light.png"
+            alt="Ora"
+            className="h-8 w-auto"
+          />
         </button>
 
-        {/* Center links — desktop */}
-        <div className="hidden md:flex items-center gap-1">
+        {/* ── Center nav links — desktop ────────────────────── */}
+        <div className="hidden md:flex items-center gap-0.5 px-2 py-1.5 rounded-full border border-gray-200/80 bg-white/60 backdrop-blur-sm">
           {links.map(({ label, id }) => (
             <button
               key={id}
               onClick={() => scrollTo(id)}
-              className={[
-                "px-4 py-2 rounded-full text-[13px] font-thin tracking-[-0.01em] transition-colors duration-200",
-                dk
-                  ? "text-gray-400 hover:text-white hover:bg-white/[0.06]"
-                  : "text-black hover:text-black hover:bg-gray-100/70",
-              ].join(" ")}
+              className="px-4 py-1.5 rounded-full text-[13.5px] font-medium font-inter text-gray-500 hover:text-gray-900 hover:bg-gray-100/80 transition-colors duration-150"
             >
               {label}
             </button>
@@ -115,87 +105,54 @@ const Navigation: React.FC<NavigationProps> = ({
           <button
             onClick={() => { setMobileOpen(false); onNavigate("for-business"); }}
             className={[
-              "px-4 py-2 rounded-full text-[13px] font-thin tracking-[-0.01em] transition-colors duration-200",
+              "px-4 py-1.5 rounded-full text-[13.5px] font-medium font-inter transition-colors duration-150",
               currentPage === "for-business"
-                ? dk
-                  ? "text-white bg-white/[0.08]"
-                  : "text-black bg-gray-100/80"
-                : dk
-                  ? "text-gray-400 hover:text-white hover:bg-white/[0.06]"
-                  : "text-black hover:text-black hover:bg-gray-100/70",
+                ? "text-gray-900 bg-gray-100/80"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/80",
             ].join(" ")}
           >
             Solution
           </button>
         </div>
 
-        {/* Right side */}
+        {/* ── Right side ───────────────────────────────────── */}
         <div className="flex items-center gap-3">
-          {/* Theme toggle */}
-          <button
-            onClick={onToggleTheme}
-            className={[
-              "w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200",
-              dk
-                ? "text-gray-400 hover:text-white hover:bg-white/[0.08]"
-                : "text-black hover:text-black hover:bg-gray-100",
-            ].join(" ")}
-            aria-label="Toggle theme"
-          >
-            {dk ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-          </button>
-
           {/* CTA — desktop */}
           <button
             onClick={onBookCall}
             className={[
-              "hidden md:inline-flex items-center px-5 py-2 rounded-full text-[13px] font-thin transition-all duration-200",
-              "bg-gradient-to-r from-sky-400 to-sky-500 text-white",
-              "shadow-[0_1px_2px_rgba(0,0,0,0.08),0_4px_12px_rgba(14,165,233,0.25)]",
-              "hover:shadow-[0_1px_2px_rgba(0,0,0,0.08),0_6px_20px_rgba(14,165,233,0.35)]",
+              "hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full",
+              "text-[13.5px] font-semibold font-inter text-white",
+              "bg-gradient-to-r from-[#3b82f6] to-[#0d9488]",
+              "shadow-[0_2px_12px_rgba(59,130,246,0.25)]",
+              "hover:shadow-[0_4px_20px_rgba(59,130,246,0.38)]",
               "hover:-translate-y-px active:translate-y-0",
+              "transition-all duration-150",
             ].join(" ")}
           >
-            Get Started
+            Réserver un appel
           </button>
 
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className={[
-              "md:hidden w-9 h-9 rounded-full flex items-center justify-center transition-colors",
-              dk
-                ? "text-gray-400 hover:text-white hover:bg-white/[0.08]"
-                : "text-black hover:text-black hover:bg-gray-100",
-            ].join(" ")}
-            aria-label="Toggle menu"
+            className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            aria-label="Menu"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </nav>
 
-      {/* Mobile menu */}
+      {/* ── Mobile menu ───────────────────────────────────── */}
       {mobileOpen && (
-        <div
-          className={[
-            "md:hidden border-t px-6 pb-5 pt-3",
-            dk
-              ? "bg-[#020617]/95 backdrop-blur-xl border-white/[0.06]"
-              : "bg-white/95 backdrop-blur-xl border-gray-200/60",
-          ].join(" ")}
-        >
+        <div className="md:hidden border-t border-gray-200/70 px-6 pb-5 pt-3 bg-[#fcfbf7]/95 backdrop-blur-xl">
           <div className="flex flex-col gap-1">
             {links.map(({ label, id }) => (
               <button
                 key={id}
                 onClick={() => scrollTo(id)}
-                className={[
-                  "text-left px-4 py-3 rounded-xl text-[15px] font-thin transition-colors",
-                  dk
-                    ? "text-gray-300 hover:bg-white/[0.06]"
-                    : "text-black hover:bg-gray-50",
-                ].join(" ")}
+                className="text-left px-4 py-3 rounded-xl text-[15px] font-medium font-inter text-gray-600 hover:text-gray-900 hover:bg-gray-100/70 transition-colors"
               >
                 {label}
               </button>
@@ -203,22 +160,19 @@ const Navigation: React.FC<NavigationProps> = ({
             <button
               onClick={() => { setMobileOpen(false); onNavigate("for-business"); }}
               className={[
-                "text-left px-4 py-3 rounded-xl text-[15px] font-thin transition-colors",
+                "text-left px-4 py-3 rounded-xl text-[15px] font-medium font-inter transition-colors",
                 currentPage === "for-business"
-                  ? dk ? "text-white bg-white/[0.06]" : "text-black bg-gray-50"
-                  : dk ? "text-gray-300 hover:bg-white/[0.06]" : "text-black hover:bg-gray-50",
+                  ? "text-gray-900 bg-gray-100/70"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/70",
               ].join(" ")}
             >
               Solution
             </button>
             <button
-              onClick={() => {
-                setMobileOpen(false);
-                onBookCall?.();
-              }}
-              className="mt-2 w-full py-3 rounded-xl text-[15px] font-semibold text-white bg-gradient-to-r from-sky-400 to-sky-500 shadow-[0_4px_12px_rgba(14,165,233,0.25)]"
+              onClick={() => { setMobileOpen(false); onBookCall?.(); }}
+              className="mt-2 w-full py-3 rounded-xl text-[15px] font-semibold font-inter text-white bg-gradient-to-r from-[#3b82f6] to-[#0d9488] shadow-[0_4px_16px_rgba(59,130,246,0.25)]"
             >
-              Get Started
+              Réserver un appel
             </button>
           </div>
         </div>

@@ -1,8 +1,5 @@
 import { forwardRef, useRef, useEffect, useState } from "react";
-import {
-  ArrowRight,
-} from "lucide-react";
-import HeroDemoCard from "./HeroDemoCard";
+import { ArrowRight } from "lucide-react";
 import {
   useTransform,
   useMotionValue,
@@ -10,67 +7,13 @@ import {
   type MotionValue,
 } from "framer-motion";
 
-/* ── Location badge (LA ↔ Paris) ──────────────────────────────── */
-const locations = [
-  { flag: "🇺🇸", text: "from LA" },
-  { flag: "🇫🇷", text: "from Paris" },
-] as const;
-
-const LocationBadge = ({ dk }: { dk: boolean }) => {
-  const [idx, setIdx] = useState(0);
-  const [fading, setFading] = useState(false);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setIdx((i) => (i + 1) % locations.length);
-        setFading(false);
-      }, 300);
-    }, 3000);
-    return () => clearInterval(id);
-  }, []);
-
-  const loc = locations[idx];
-
-  return (
-    <span
-      className={[
-        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium",
-        dk
-          ? "bg-white/[0.06] border border-white/[0.10] text-gray-400"
-          : "bg-white/80 border border-gray-200/60 text-gray-500",
-      ].join(" ")}
-    >
-      <span
-        style={{
-          opacity: fading ? 0 : 1,
-          transform: fading ? "translateY(-4px)" : "translateY(0)",
-          transition: "opacity 300ms ease, transform 300ms ease",
-        }}
-      >
-        {loc.flag}
-      </span>
-      <span
-        style={{
-          opacity: fading ? 0 : 1,
-          transform: fading ? "translateY(4px)" : "translateY(0)",
-          transition: "opacity 300ms ease, transform 300ms ease",
-        }}
-      >
-        {loc.text}
-      </span>
-    </span>
-  );
-};
-
 /* ── Scroll-reveal character ─────────────────────────────────── */
 const ScrollChar: React.FC<{
   char: string;
   progress: MotionValue<number>;
   range: [number, number];
 }> = ({ char, progress, range }) => {
-  const opacity = useTransform(progress, range, [0.05, 1]);
+  const opacity = useTransform(progress, range, [0.08, 1]);
   return (
     <motion.span style={{ opacity, display: "inline-block" }}>
       {char === " " ? "\u00A0" : char}
@@ -81,23 +24,23 @@ const ScrollChar: React.FC<{
 /* ── Animations ──────────────────────────────────────────────── */
 const heroCSS = `
 @keyframes heroFadeUp {
-  from { opacity: 0; transform: translateY(30px); }
+  from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .hero-stagger { opacity: 0; }
 .hero-ready .hero-stagger { animation: heroFadeUp 0.9s cubic-bezier(.22,1,.36,1) forwards; }
-.hero-d1 { animation-delay: 50ms; }
-.hero-d2 { animation-delay: 200ms; }
-.hero-d3 { animation-delay: 350ms; }
-.hero-d4 { animation-delay: 500ms; }
-.hero-d5 { animation-delay: 650ms; }
+.hero-d1 { animation-delay: 60ms; }
+.hero-d2 { animation-delay: 180ms; }
+.hero-d3 { animation-delay: 310ms; }
+.hero-d4 { animation-delay: 440ms; }
+.hero-d5 { animation-delay: 570ms; }
+.hero-d6 { animation-delay: 680ms; }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-stagger { animation: none !important; opacity: 1 !important; }
   .reveal { opacity: 1 !important; transform: none !important; }
 }
 
-/* Scroll-triggered reveal (no blur — too expensive during scroll) */
 .reveal {
   opacity: 0;
   transform: translateY(40px);
@@ -109,9 +52,55 @@ const heroCSS = `
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Browser chrome frame */
+.browser-frame {
+  background: #f0f0f0;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px 16px 0 0;
+  box-shadow:
+    0 24px 80px rgba(0,0,0,0.10),
+    0 8px 24px rgba(0,0,0,0.05),
+    0 0 0 1px rgba(0,0,0,0.04);
+}
+.browser-chrome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.browser-dots {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.browser-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.browser-dot-red   { background: #ff5f57; }
+.browser-dot-amber { background: #febc2e; }
+.browser-dot-green { background: #28c840; }
+.browser-urlbar {
+  flex: 1;
+  height: 24px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #9ca3af;
+  font-family: Inter, sans-serif;
+  max-width: 240px;
+  margin: 0 auto;
+}
 `;
 
-/* ── Social proof avatar gradients ───────────────────────────── */
+/* ── Social proof avatars ───────────────────────────────────── */
 const avatars = [
   "from-sky-400 to-blue-500",
   "from-violet-400 to-purple-500",
@@ -127,18 +116,16 @@ interface HeroProps {
 }
 
 const Hero = forwardRef<HTMLElement, HeroProps>(
-  ({ theme, scrollToSection, openBooking }, ref) => {
-    const dk = theme === "dark";
-
-    /* ── Delay hero animation until mount (avoids flash on dark bg) ── */
+  ({ scrollToSection, openBooking }, ref) => {
+    /* ── Delay hero animation until mount ── */
     const [heroReady, setHeroReady] = useState(false);
     useEffect(() => {
       requestAnimationFrame(() => setHeroReady(true));
     }, []);
 
     /* ── TRUE SCROLL-LOCK: phase 1 = letters, phase 2 = video slides up ── */
-    const revealProgress = useMotionValue(0); // 0→1 letters
-    const videoSlide = useMotionValue(0);     // 0→1 video rises
+    const revealProgress = useMotionValue(0);
+    const videoSlide = useMotionValue(0);
     const videoSlideY = useTransform(videoSlide, [0, 1], ["0vh", "-100vh"]);
     const textFadeOut = useTransform(videoSlide, [0, 0.4], [1, 0]);
     const lockRef = useRef<HTMLDivElement>(null);
@@ -146,10 +133,10 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
     const [textVisible, setTextVisible] = useState(false);
 
     const revealLines = [
-      "Time is your greatest asset.",
-      "stop wasting it on excel work.",
-      "Ora builds tailored automations",
-      "that run silently in the background.",
+      "Le temps est votre actif le plus précieux.",
+      "Cessez de le gaspiller sur Excel.",
+      "Ora construit des automatisations sur mesure",
+      "qui tournent silencieusement en arrière-plan.",
     ];
     const totalChars = revealLines.reduce((sum, l) => sum + l.length, 0);
 
@@ -170,7 +157,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
       return () => obs.disconnect();
     }, []);
 
-    // 2) Scroll lock — activates when section is ~90% visible (text well centered)
+    // 2) Scroll lock — activates when section is ~90% visible
     useEffect(() => {
       const el = lockRef.current;
       if (!el) return;
@@ -202,28 +189,13 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
 
         if (lettersComplete) {
           const next = videoSlide.get() + delta / SLIDE_SPEED * SPEED;
-          if (next >= 1) {
-            videoSlide.set(1);
-            unlock();
-            return;
-          }
-          if (next <= 0) {
-            videoSlide.set(0);
-            revealProgress.set(0.99);
-            return;
-          }
+          if (next >= 1) { videoSlide.set(1); unlock(); return; }
+          if (next <= 0) { videoSlide.set(0); revealProgress.set(0.99); return; }
           videoSlide.set(next);
         } else {
           const next = revealProgress.get() + delta;
-          if (next >= 1) {
-            revealProgress.set(1);
-            return;
-          }
-          if (next <= 0) {
-            revealProgress.set(0);
-            unlock();
-            return;
-          }
+          if (next >= 1) { revealProgress.set(1); return; }
+          if (next <= 0) { revealProgress.set(0); unlock(); return; }
           revealProgress.set(next);
         }
       };
@@ -258,9 +230,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
       };
     }, [revealProgress, videoSlide]);
 
-    /* ── Section reveal refs (IntersectionObserver) ─────────── */
     const videoSectionRef = useRef<HTMLDivElement>(null);
-
     useEffect(() => {
       const targets = [videoSectionRef.current];
       const observer = new IntersectionObserver(
@@ -268,13 +238,6 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               entry.target.classList.add("visible");
-              entry.target
-                .querySelectorAll<HTMLElement>("[data-reveal-delay]")
-                .forEach((child) => {
-                  setTimeout(() => {
-                    child.classList.add("visible");
-                  }, parseInt(child.dataset.revealDelay || "0", 10));
-                });
               observer.unobserve(entry.target);
             }
           });
@@ -289,175 +252,149 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
       <>
         <style>{heroCSS}</style>
 
-        <section ref={ref} id="hero" className={`relative overflow-hidden${heroReady ? " hero-ready" : ""}`} style={{ marginBottom: "-85vh" }}>
-          {/* ── Background ────────────────────────────────── */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            aria-hidden="true"
-          >
-            {dk ? (
-              <>
-                <div className="absolute inset-0 bg-[#020617]" />
-                <div
-                  className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full opacity-[0.07]"
-                  style={{
-                    background:
-                      "radial-gradient(circle, rgba(56,189,248,0.5) 0%, transparent 70%)",
-                    filter: "blur(80px)",
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <div className="absolute inset-0 bg-[#fefefe]" />
-                <div
-                  className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full"
-                  style={{
-                    background:
-                      "radial-gradient(circle, rgba(210,232,255,0.45) 0%, transparent 65%)",
-                    filter: "blur(40px)",
-                    contain: "strict",
-                  }}
-                />
-                <div
-                  className="absolute -bottom-20 -left-20 w-[700px] h-[700px] rounded-full"
-                  style={{
-                    background:
-                      "radial-gradient(circle, rgba(255,200,220,0.4) 0%, transparent 60%)",
-                    filter: "blur(40px)",
-                    contain: "strict",
-                  }}
-                />
-                <div
-                  className="absolute -top-10 left-1/3 w-[500px] h-[500px] rounded-full"
-                  style={{
-                    background:
-                      "radial-gradient(circle, rgba(255,210,230,0.3) 0%, transparent 65%)",
-                    filter: "blur(40px)",
-                    contain: "strict",
-                  }}
-                />
-              </>
-            )}
+        <section
+          ref={ref}
+          id="hero"
+          className={`relative overflow-hidden${heroReady ? " hero-ready" : ""}`}
+          style={{ marginBottom: "-85vh" }}
+        >
+          {/* ── Background ────────────────────────────────────── */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute inset-0 bg-[#fcfbf7]" />
+            {/* Subtle gradient orbs */}
+            <div
+              className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full"
+              style={{
+                background: "radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 65%)",
+                filter: "blur(60px)",
+              }}
+            />
+            <div
+              className="absolute top-1/2 -left-20 w-[600px] h-[600px] rounded-full"
+              style={{
+                background: "radial-gradient(circle, rgba(13,148,136,0.06) 0%, transparent 60%)",
+                filter: "blur(60px)",
+              }}
+            />
           </div>
 
           {/* ═══════════════════════════════════════════════════
-              SECTION 1 — HERO (above the fold)
+              SECTION 1 — HERO ABOVE THE FOLD (Alpine.inc style)
           ═══════════════════════════════════════════════════ */}
-          <div className="relative z-10 pt-28 pb-32 md:pt-36 md:pb-44 lg:pt-44 lg:pb-56">
-            <div className="max-w-7xl mx-auto px-6 lg:px-10">
-              <div className="grid lg:grid-cols-[0.8fr_1.2fr] gap-12 lg:gap-16 items-start">
-                {/* ── Left column: copy ───────────────── */}
-                <div className="max-w-xl">
-                  {/* H1 */}
-                  <h1 className="hero-stagger hero-d1">
-                    <span
-                      className={[
-                        "block text-[clamp(2rem,5vw,3.5rem)] font-light leading-[1.1] tracking-[-0.03em]",
-                        dk ? "text-white" : "text-black",
-                      ].join(" ")}
-                    >
-                      We build AI automation that eliminates manual Excel work
-                    </span>
-                  </h1>
+          <div className="relative z-10 pt-28 md:pt-36 lg:pt-44 pb-0">
+            <div className="max-w-5xl mx-auto px-6 lg:px-10 text-center">
 
-                  {/* Subtitle */}
-                  <p
-                    className={[
-                      "hero-stagger hero-d2 mt-6 text-[clamp(0.95rem,1.8vw,1.125rem)] leading-[1.7] max-w-[460px]",
-                      dk ? "text-gray-400" : "text-gray-500",
-                    ].join(" ")}
-                  >
-                    Reporting, reconciliation, and invoicing &mdash; automated
-                    in days. Your team focuses on decisions, not data entry.
-                  </p>
+              {/* Eyebrow badge */}
+              <div className="hero-stagger hero-d1 mb-7 flex justify-center">
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-gray-200/80 text-[12.5px] font-medium font-inter text-gray-500 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#3b82f6] to-[#0d9488] inline-block" />
+                  Automatisation Excel · Python sur mesure
+                </span>
+              </div>
 
-                  {/* CTAs */}
-                  <div className="hero-stagger hero-d3 mt-9 flex flex-wrap items-center gap-3.5">
-                    <button
-                      onClick={openBooking}
-                      className={[
-                        "group inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-[15px] font-semibold text-white",
-                        "transition-all duration-150 hover:-translate-y-px active:translate-y-0",
-                        "bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600",
-                        "shadow-[0_1px_3px_rgba(0,0,0,0.1),0_8px_24px_rgba(37,99,235,0.35)]",
-                        "hover:shadow-[0_1px_3px_rgba(0,0,0,0.1),0_10px_32px_rgba(37,99,235,0.45)]",
-                        "hover:from-blue-500 hover:via-blue-400 hover:to-blue-500",
-                      ].join(" ")}
-                    >
-                      Start Free Trial
-                      <ArrowRight className="w-4 h-4 opacity-80 group-hover:opacity-100 group-hover:translate-x-[3px] transition-all duration-150" />
-                    </button>
+              {/* H1 */}
+              <h1 className="hero-stagger hero-d2 font-poppins text-[clamp(2.6rem,6.5vw,4.8rem)] font-semibold leading-[1.1] tracking-[-0.03em] text-[#111827]">
+                Automatisez votre{" "}
+                <br className="hidden sm:block" />
+                <span className="text-brand-gradient">travail Excel.</span>
+              </h1>
 
-                    <button
-                      onClick={() => scrollToSection("how-it-works")}
-                      className={[
-                        "inline-flex items-center px-7 py-3.5 rounded-full text-[15px] font-semibold border transition-all duration-150",
-                        dk
-                          ? "border-white/[0.12] text-gray-300 hover:bg-white/[0.05] hover:border-white/[0.18]"
-                          : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400",
-                        "shadow-[0_1px_2px_rgba(0,0,0,0.06)]",
-                      ].join(" ")}
-                    >
-                      Watch Demo
-                    </button>
+              {/* Subtitle */}
+              <p className="hero-stagger hero-d3 mt-6 text-[clamp(1rem,2vw,1.175rem)] leading-[1.75] text-gray-500 font-inter max-w-2xl mx-auto">
+                Ora crée des automatisations sur mesure pour vos rapports, réconciliations et factures &mdash; votre équipe se concentre sur les décisions, pas la saisie.
+              </p>
 
-                    <LocationBadge dk={dk} />
-                  </div>
+              {/* CTAs */}
+              <div className="hero-stagger hero-d4 mt-9 flex flex-wrap items-center justify-center gap-3.5">
+                <button
+                  onClick={openBooking}
+                  className={[
+                    "group inline-flex items-center gap-2 px-7 py-3.5 rounded-full",
+                    "text-[15px] font-semibold font-inter text-white",
+                    "bg-gradient-to-r from-[#3b82f6] to-[#0d9488]",
+                    "shadow-[0_2px_12px_rgba(59,130,246,0.30)]",
+                    "hover:shadow-[0_4px_24px_rgba(59,130,246,0.40)]",
+                    "hover:-translate-y-px active:translate-y-0",
+                    "transition-all duration-150",
+                  ].join(" ")}
+                >
+                  Réserver un appel
+                  <ArrowRight className="w-4 h-4 opacity-80 group-hover:translate-x-[3px] transition-transform duration-150" />
+                </button>
 
-                  {/* Social proof */}
-                  <div className="hero-stagger hero-d4 mt-10 flex items-center gap-3">
-                    <div className="flex -space-x-2">
-                      {avatars.map((g, i) => (
-                        <div
-                          key={i}
-                          className={[
-                            "w-8 h-8 rounded-full bg-gradient-to-br ring-2",
-                            g,
-                            dk ? "ring-[#020617]" : "ring-white",
-                          ].join(" ")}
-                        />
-                      ))}
-                    </div>
-                    <p
-                      className={[
-                        "text-[13px]",
-                        dk ? "text-gray-500" : "text-gray-400",
-                      ].join(" ")}
-                    >
-                      Trusted by{" "}
-                      <span
-                        className={[
-                          "font-semibold",
-                          dk ? "text-gray-300" : "text-gray-600",
-                        ].join(" ")}
-                      >
-                        200+ finance &amp; ops teams
-                      </span>
-                    </p>
-                  </div>
+                <button
+                  onClick={() => scrollToSection("how-it-works")}
+                  className={[
+                    "inline-flex items-center px-7 py-3.5 rounded-full",
+                    "text-[15px] font-semibold font-inter",
+                    "border border-gray-300 text-gray-700",
+                    "hover:bg-gray-50 hover:border-gray-400",
+                    "shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
+                    "transition-all duration-150",
+                  ].join(" ")}
+                >
+                  Voir la démo
+                </button>
+              </div>
+
+              {/* Social proof */}
+              <div className="hero-stagger hero-d5 mt-9 flex items-center justify-center gap-3">
+                <div className="flex -space-x-2">
+                  {avatars.map((g, i) => (
+                    <div
+                      key={i}
+                      className={`w-8 h-8 rounded-full bg-gradient-to-br ring-2 ring-[#fcfbf7] ${g}`}
+                    />
+                  ))}
                 </div>
+                <p className="text-[13px] font-inter text-gray-400">
+                  Déjà utilisé par{" "}
+                  <span className="font-semibold text-gray-600">200+ équipes finance &amp; ops</span>
+                </p>
+              </div>
+            </div>
 
-                {/* ── Right column: demo card ── */}
-                <div className="flex flex-col items-center">
-                  <HeroDemoCard dk={dk} />
+            {/* ── App screenshot / browser frame ─────────────── */}
+            <div className="hero-stagger hero-d6 relative z-10 mt-14 mx-auto max-w-6xl px-6 lg:px-10">
+              <div className="browser-frame overflow-hidden">
+                {/* Browser chrome */}
+                <div className="browser-chrome">
+                  <div className="browser-dots">
+                    <div className="browser-dot browser-dot-red" />
+                    <div className="browser-dot browser-dot-amber" />
+                    <div className="browser-dot browser-dot-green" />
+                  </div>
+                  <div className="browser-urlbar">
+                    app.ora.io
+                  </div>
+                  <div style={{ width: 56 }} />
                 </div>
+                {/* Video */}
+                <video
+                  src="/demo-main1-safari.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  className="w-full aspect-[16/9] object-cover"
+                  onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 0.7; }}
+                />
               </div>
             </div>
           </div>
 
           {/* ═══════════════════════════════════════════════════
-              SECTION 2A — TRUE SCROLL-LOCK LETTER REVEAL
+              SECTION 2A — SCROLL-LOCK LETTER REVEAL
           ═══════════════════════════════════════════════════ */}
           <div
             ref={lockRef}
-            className="relative z-[1] min-h-screen flex items-center justify-center"
+            className="relative z-[1] min-h-screen flex items-center justify-center bg-[#fcfbf7]"
           >
             <motion.div
               className="text-center max-w-4xl mx-auto px-6 lg:px-10"
               style={{
                 opacity: textVisible ? textFadeOut : 0,
-                scale: 1,
                 transform: textVisible ? undefined : "translateY(40px)",
                 transition: textVisible
                   ? undefined
@@ -471,10 +408,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                 return (
                   <p
                     key={li}
-                    className={[
-                      "text-2xl md:text-4xl lg:text-5xl font-light leading-[1.6] tracking-[-0.02em]",
-                      dk ? "text-white" : "text-black",
-                    ].join(" ")}
+                    className="font-poppins text-2xl md:text-[2.1rem] lg:text-[2.6rem] font-medium leading-[1.55] tracking-[-0.025em] text-[#111827]"
                   >
                     {line.split("").map((char: string, ci: number) => {
                       const idx = lineStart + ci;
@@ -493,25 +427,27 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                 );
               })}
 
-              {/* CTA button */}
+              {/* CTA button — fades in once text fully revealed */}
               <motion.button
                 onClick={openBooking}
                 className={[
-                  "mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-colors",
-                  dk
-                    ? "bg-white text-black hover:bg-white/90"
-                    : "bg-black text-white hover:bg-black/85",
+                  "mt-10 inline-flex items-center gap-2 px-7 py-3.5 rounded-full",
+                  "text-[15px] font-semibold font-inter text-white",
+                  "bg-gradient-to-r from-[#3b82f6] to-[#0d9488]",
+                  "shadow-[0_2px_14px_rgba(59,130,246,0.30)]",
+                  "hover:shadow-[0_4px_24px_rgba(59,130,246,0.42)]",
+                  "hover:-translate-y-px transition-all duration-150",
                 ].join(" ")}
                 style={{ opacity: useTransform(revealProgress, [0.8, 1], [0, 1]) }}
               >
-                Book a call
+                Réserver un appel
                 <ArrowRight className="w-4 h-4" />
               </motion.button>
             </motion.div>
           </div>
 
           {/* ═══════════════════════════════════════════════════
-              SECTION 2B — VIDEO
+              SECTION 2B — VIDEO SLIDES UP
           ═══════════════════════════════════════════════════ */}
           <motion.div
             ref={videoSectionRef}
@@ -519,7 +455,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
             style={{ y: videoSlideY }}
           >
             <div className="max-w-7xl w-full mx-auto px-6 lg:px-10">
-              <div className="rounded-[28px] overflow-hidden">
+              <div className="rounded-[24px] overflow-hidden border border-gray-200/60 shadow-[0_24px_80px_rgba(0,0,0,0.09),0_4px_16px_rgba(0,0,0,0.04)]">
                 <video
                   src="/demo-main1-safari.mp4"
                   autoPlay
@@ -528,9 +464,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                   playsInline
                   preload="metadata"
                   className="w-full aspect-[16/9] object-cover"
-                  onLoadedMetadata={(e) => {
-                    e.currentTarget.playbackRate = 0.7;
-                  }}
+                  onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 0.7; }}
                 />
               </div>
             </div>

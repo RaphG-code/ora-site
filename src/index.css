@@ -126,9 +126,32 @@
  }
 
  body {
-   @apply bg-white text-black dark:bg-background dark:text-white transition-colors duration-300 ease-in-out;
-   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-     sans-serif;
+   @apply bg-[#fcfbf7] text-[#111827] dark:bg-background dark:text-white transition-colors duration-300 ease-in-out;
+   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+ }
+
+ h1, h2, h3, h4, h5, h6 {
+   font-family: "Poppins", system-ui, -apple-system, sans-serif;
+ }
+
+ .font-poppins {
+   font-family: "Poppins", system-ui, -apple-system, sans-serif;
+ }
+
+ .font-inter {
+   font-family: "Inter", system-ui, -apple-system, sans-serif;
+ }
+
+ /* Brand gradient utilities */
+ .text-brand-gradient {
+   background: linear-gradient(to right, #3b82f6, #0d9488);
+   -webkit-background-clip: text;
+   -webkit-text-fill-color: transparent;
+   background-clip: text;
+ }
+
+ .bg-brand-gradient {
+   background: linear-gradient(to right, #3b82f6, #0d9488);
  }
 
  @keyframes fadeUp {
