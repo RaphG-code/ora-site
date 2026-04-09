@@ -103,7 +103,7 @@ export function LogosSlider({ label = "Intégré dans les équipes de" }: LogosS
           {partners.map((partner) => (
             <div
               key={partner.id}
-              className="flex items-center justify-center opacity-40 hover:opacity-70 transition-opacity duration-200"
+              className="flex items-center justify-center"
               style={{ minWidth: 80 }}
             >
               {partner.logo}
