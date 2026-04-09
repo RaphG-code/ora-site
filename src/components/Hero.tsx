@@ -1,5 +1,6 @@
 import { forwardRef, useRef, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { LogosSlider } from "./LogosSlider";
 import {
   useTransform,
   useMotionValue,
@@ -99,14 +100,6 @@ const heroCSS = `
   margin: 0 auto;
 }
 `;
-
-/* ── Social proof avatars ───────────────────────────────────── */
-const avatars = [
-  "from-sky-400 to-blue-500",
-  "from-violet-400 to-purple-500",
-  "from-emerald-400 to-teal-500",
-  "from-amber-400 to-orange-500",
-];
 
 /* ── Component ───────────────────────────────────────────────── */
 interface HeroProps {
@@ -281,31 +274,23 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
           {/* ═══════════════════════════════════════════════════
               SECTION 1 — HERO ABOVE THE FOLD (Alpine.inc style)
           ═══════════════════════════════════════════════════ */}
-          <div className="relative z-10 pt-28 md:pt-36 lg:pt-44 pb-0">
+          <div className="relative z-10 pt-28 md:pt-32 lg:pt-36 pb-0">
             <div className="max-w-5xl mx-auto px-6 lg:px-10 text-center">
 
-              {/* Eyebrow badge */}
-              <div className="hero-stagger hero-d1 mb-7 flex justify-center">
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-gray-200/80 text-[12.5px] font-medium font-inter text-gray-500 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#3b82f6] to-[#0d9488] inline-block" />
-                  Automatisation Excel · Python sur mesure
-                </span>
-              </div>
-
               {/* H1 */}
-              <h1 className="hero-stagger hero-d2 font-poppins text-[clamp(2.6rem,6.5vw,4.8rem)] font-semibold leading-[1.1] tracking-[-0.03em] text-[#111827]">
+              <h1 className="hero-stagger hero-d1 font-poppins text-[clamp(2.6rem,6.5vw,4.8rem)] font-semibold leading-[1.1] tracking-[-0.03em] text-[#111827]">
                 Automatisez votre{" "}
                 <br className="hidden sm:block" />
                 <span className="text-brand-gradient">travail Excel.</span>
               </h1>
 
               {/* Subtitle */}
-              <p className="hero-stagger hero-d3 mt-6 text-[clamp(1rem,2vw,1.175rem)] leading-[1.75] text-gray-500 font-inter max-w-2xl mx-auto">
+              <p className="hero-stagger hero-d2 mt-6 text-[clamp(1rem,2vw,1.175rem)] leading-[1.75] text-gray-500 font-inter max-w-2xl mx-auto">
                 Ora crée des automatisations sur mesure pour vos rapports, réconciliations et factures &mdash; votre équipe se concentre sur les décisions, pas la saisie.
               </p>
 
               {/* CTAs */}
-              <div className="hero-stagger hero-d4 mt-9 flex flex-wrap items-center justify-center gap-3.5">
+              <div className="hero-stagger hero-d3 mt-9 flex flex-wrap items-center justify-center gap-3.5">
                 <button
                   onClick={openBooking}
                   className={[
@@ -336,26 +321,10 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                   Voir la démo
                 </button>
               </div>
-
-              {/* Social proof */}
-              <div className="hero-stagger hero-d5 mt-9 flex items-center justify-center gap-3">
-                <div className="flex -space-x-2">
-                  {avatars.map((g, i) => (
-                    <div
-                      key={i}
-                      className={`w-8 h-8 rounded-full bg-gradient-to-br ring-2 ring-[#fcfbf7] ${g}`}
-                    />
-                  ))}
-                </div>
-                <p className="text-[13px] font-inter text-gray-400">
-                  Déjà utilisé par{" "}
-                  <span className="font-semibold text-gray-600">200+ équipes finance &amp; ops</span>
-                </p>
-              </div>
             </div>
 
             {/* ── App screenshot / browser frame ─────────────── */}
-            <div className="hero-stagger hero-d6 relative z-10 mt-14 mx-auto max-w-6xl px-6 lg:px-10">
+            <div className="hero-stagger hero-d4 relative z-10 mt-10 mx-auto max-w-6xl px-6 lg:px-10">
               <div className="browser-frame overflow-hidden">
                 {/* Browser chrome */}
                 <div className="browser-chrome">
@@ -382,6 +351,11 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                 />
               </div>
             </div>
+          </div>
+
+          {/* ── Logos slider ───────────────────────────── */}
+          <div className="hero-stagger hero-d5 mx-auto max-w-6xl px-6 lg:px-10">
+            <LogosSlider />
           </div>
 
           {/* ═══════════════════════════════════════════════════

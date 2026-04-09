@@ -85,7 +85,7 @@ const Navigation: React.FC<NavigationProps> = ({
           aria-label="Ora — Accueil"
         >
           <img
-            src="/logos/logo-color-light.png"
+            src="/logos/logo-color-dark.png"
             alt="Ora"
             className="h-8 w-auto"
           />
