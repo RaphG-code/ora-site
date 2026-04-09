@@ -148,6 +148,8 @@
    -webkit-background-clip: text;
    -webkit-text-fill-color: transparent;
    background-clip: text;
+   /* Prevent descenders (g, j, p…) from being clipped by the background-clip area */
+   padding-bottom: 0.15em;
  }
 
  .bg-brand-gradient {

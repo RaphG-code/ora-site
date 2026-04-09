@@ -1,6 +1,7 @@
 import { forwardRef, useRef, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { LogosSlider } from "./LogosSlider";
+import { AnimatedHeroTitle } from "./ui/animated-hero";
 import {
   useTransform,
   useMotionValue,
@@ -278,11 +279,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
             <div className="max-w-5xl mx-auto px-6 lg:px-10 text-center">
 
               {/* H1 */}
-              <h1 className="hero-stagger hero-d1 font-poppins text-[clamp(2.6rem,6.5vw,4.8rem)] font-semibold leading-[1.1] tracking-[-0.03em] text-[#111827]">
-                Automatisez votre{" "}
-                <br className="hidden sm:block" />
-                <span className="text-brand-gradient">travail Excel.</span>
-              </h1>
+              <AnimatedHeroTitle />
 
               {/* Subtitle */}
               <p className="hero-stagger hero-d2 mt-6 text-[clamp(1rem,2vw,1.175rem)] leading-[1.75] text-gray-500 font-inter max-w-2xl mx-auto">
