@@ -254,7 +254,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
         >
           {/* ── Background ────────────────────────────────────── */}
           <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-            <div className="absolute inset-0 bg-[#fcfbf7]" />
+            <div className="absolute inset-0 bg-[#fcfbf7] dark:bg-[#111827]" />
             {/* Subtle gradient orbs */}
             <div
               className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full"
@@ -282,7 +282,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
               <AnimatedHeroTitle />
 
               {/* Subtitle */}
-              <p className="hero-stagger hero-d2 mt-6 text-[clamp(1rem,2vw,1.175rem)] leading-[1.75] text-gray-500 font-inter max-w-2xl mx-auto">
+              <p className="hero-stagger hero-d2 mt-6 text-[clamp(1rem,2vw,1.175rem)] leading-[1.75] text-gray-500 dark:text-gray-400 font-inter max-w-2xl mx-auto">
                 Ora crée des automatisations sur mesure pour vos rapports, réconciliations et factures &mdash; votre équipe se concentre sur les décisions, pas la saisie.
               </p>
 
@@ -309,8 +309,8 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                   className={[
                     "inline-flex items-center px-7 py-3.5 rounded-full",
                     "text-[15px] font-semibold font-inter",
-                    "border border-gray-300 text-gray-700",
-                    "hover:bg-gray-50 hover:border-gray-400",
+                    "border border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-300",
+                    "hover:bg-gray-50 dark:hover:bg-white/[0.06] hover:border-gray-400 dark:hover:border-white/30",
                     "shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
                     "transition-all duration-150",
                   ].join(" ")}
@@ -360,7 +360,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
           ═══════════════════════════════════════════════════ */}
           <div
             ref={lockRef}
-            className="relative z-[1] min-h-screen flex items-center justify-center bg-[#fcfbf7]"
+            className="relative z-[1] min-h-screen flex items-center justify-center bg-[#fcfbf7] dark:bg-[#111827]"
           >
             <motion.div
               className="text-center max-w-4xl mx-auto px-6 lg:px-10"
@@ -379,7 +379,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                 return (
                   <p
                     key={li}
-                    className="font-poppins text-2xl md:text-[2.1rem] lg:text-[2.6rem] font-medium leading-[1.55] tracking-[-0.025em] text-[#111827]"
+                    className="font-poppins text-2xl md:text-[2.1rem] lg:text-[2.6rem] font-medium leading-[1.55] tracking-[-0.025em] text-[#111827] dark:text-white"
                   >
                     {line.split("").map((char: string, ci: number) => {
                       const idx = lineStart + ci;

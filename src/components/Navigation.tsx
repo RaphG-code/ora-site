@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 
 type NavigationProps = {
   theme: "light" | "dark";
@@ -16,6 +16,8 @@ const links = [
 ];
 
 const Navigation: React.FC<NavigationProps> = ({
+  theme,
+  onToggleTheme,
   onBookCall,
   currentPage,
   onNavigate,
@@ -61,7 +63,7 @@ const Navigation: React.FC<NavigationProps> = ({
       className={[
         "fixed top-0 inset-x-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-[#fcfbf7]/90 backdrop-blur-xl border-b border-gray-200/60 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+          ? "bg-[#fcfbf7]/90 dark:bg-[#111827]/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/[0.08] shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
           : "bg-transparent",
       ].join(" ")}
     >
@@ -84,7 +86,7 @@ const Navigation: React.FC<NavigationProps> = ({
             aria-label="Ora — Accueil"
           >
             <img
-              src="/logos/logo-color-dark.png"
+              src={theme === "dark" ? "/logos/logo-color-light.png" : "/logos/logo-color-dark.png"}
               alt="Ora"
               className="h-9 w-auto"
             />
@@ -96,7 +98,7 @@ const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={id}
                 onClick={() => scrollTo(id)}
-                className="px-3.5 py-2 text-[13.5px] font-medium font-inter text-gray-500 hover:text-gray-900 transition-colors duration-150 rounded-md hover:bg-gray-100/60"
+                className="px-3.5 py-2 text-[13.5px] font-medium font-inter text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-150 rounded-md hover:bg-gray-100/60 dark:hover:bg-white/[0.06]"
               >
                 {label}
               </button>
@@ -106,8 +108,8 @@ const Navigation: React.FC<NavigationProps> = ({
               className={[
                 "px-3.5 py-2 text-[13.5px] font-medium font-inter transition-colors duration-150 rounded-md",
                 currentPage === "for-business"
-                  ? "text-gray-900 bg-gray-100/60"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/60",
+                  ? "text-gray-900 dark:text-white bg-gray-100/60 dark:bg-white/[0.06]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/60 dark:hover:bg-white/[0.06]",
               ].join(" ")}
             >
               Solution
@@ -117,12 +119,21 @@ const Navigation: React.FC<NavigationProps> = ({
 
         {/* ── Right: Log in + CTA + mobile hamburger ─────────── */}
         <div className="flex items-center gap-2">
+          {/* Theme toggle — provisoire debug */}
+          <button
+            onClick={onToggleTheme}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors"
+            aria-label="Basculer le thème"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           {/* Log in — desktop */}
           <button
             className={[
               "hidden md:inline-flex items-center px-4 py-2 rounded-full",
-              "text-[13.5px] font-medium font-inter text-gray-600",
-              "hover:text-gray-900 hover:bg-gray-100/70",
+              "text-[13.5px] font-medium font-inter text-gray-600 dark:text-gray-400",
+              "hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/[0.06]",
               "transition-colors duration-150",
             ].join(" ")}
           >
@@ -158,13 +169,13 @@ const Navigation: React.FC<NavigationProps> = ({
 
       {/* ── Mobile menu ───────────────────────────────────── */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-200/60 px-6 pb-5 pt-3 bg-[#fcfbf7]/95 backdrop-blur-xl">
+        <div className="md:hidden border-t border-gray-200/60 dark:border-white/[0.08] px-6 pb-5 pt-3 bg-[#fcfbf7]/95 dark:bg-[#111827]/95 backdrop-blur-xl">
           <div className="flex flex-col gap-1">
             {links.map(({ label, id }) => (
               <button
                 key={id}
                 onClick={() => scrollTo(id)}
-                className="text-left px-4 py-3 rounded-xl text-[15px] font-medium font-inter text-gray-600 hover:text-gray-900 hover:bg-gray-100/70 transition-colors"
+                className="text-left px-4 py-3 rounded-xl text-[15px] font-medium font-inter text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/[0.06] transition-colors"
               >
                 {label}
               </button>
@@ -174,15 +185,15 @@ const Navigation: React.FC<NavigationProps> = ({
               className={[
                 "text-left px-4 py-3 rounded-xl text-[15px] font-medium font-inter transition-colors",
                 currentPage === "for-business"
-                  ? "text-gray-900 bg-gray-100/70"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/70",
+                  ? "text-gray-900 dark:text-white bg-gray-100/70 dark:bg-white/[0.06]"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/[0.06]",
               ].join(" ")}
             >
               Solution
             </button>
             <div className="mt-2 flex flex-col gap-2">
               <button
-                className="w-full py-3 rounded-xl text-[15px] font-medium font-inter text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors"
+                className="w-full py-3 rounded-xl text-[15px] font-medium font-inter text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/[0.12] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors"
               >
                 Log in
               </button>

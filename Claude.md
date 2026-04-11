@@ -64,7 +64,11 @@ Brand gradient: `linear-gradient(to right, #3b82f6, #0d9488)`
 
 **Theming — Light / Dark mode:**
 - Tailwind is configured with `darkMode: "class"` — the `<html>` element receives `.dark` or `.light`
-- TODO: audit hardcoded colors, add `ThemeToggle` in `Navigation.tsx`, persist in `localStorage`, respect `prefers-color-scheme` on first visit, swap logo based on active theme
+- Theme follows `prefers-color-scheme` automatically. No localStorage entry = toujours synchronisé avec le système, y compris les changements en live.
+- An inline `<script>` in `<head>` (before React loads) applies the class immediately to avoid flash of wrong theme.
+- Logo in dark mode: `logo-color-light.png`. Logo in light mode: `logo-color-dark.png`.
+- **Ne jamais persister le thème en localStorage sauf si un vrai sélecteur de thème (auto/dark/light) est implémenté.** Le toggle provisoire dans la nav ne sauvegarde rien — session uniquement — pour ne pas bloquer la détection système.
+- Clé `"ora-theme-v2"` réservée au futur sélecteur manuel. La clé `"theme"` (ancienne) ne doit jamais être relue — elle était auto-écrite par une version précédente et retourne `"light"` pour tous les anciens visiteurs.
 
 **Languages:**
 - UI-facing strings: **French** (labels, buttons, dialogs, log messages) with an **English** version
@@ -95,6 +99,35 @@ Brand gradient: `linear-gradient(to right, #3b82f6, #0d9488)`
 - Animations use Framer Motion; Three.js is reserved for the galaxy/hero background
 - Smooth scroll is handled globally by Lenis — don't add competing scroll logic
 - Components are `.tsx`, co-located global styles go in `src/index.css` as Tailwind utilities
+
+**Animated multi-line headings (Framer Motion + AnimatePresence):**
+
+To animate a rotating word/phrase on a second line, centered relative to the first line, use two stacked `block` spans inside a `text-center` h1. Do NOT use `inline-grid` with invisible spacers — it creates a box sized to the widest phrase that breaks alignment with sibling lines.
+
+```tsx
+<h1 className="... text-center">
+  <span className="block">Ligne fixe</span>
+  <span className="block relative pb-3" style={{ clipPath: "inset(0 -9999px)" }}>
+    <AnimatePresence mode="wait">
+      <motion.span
+        key={index}
+        className="inline-block text-brand-gradient whitespace-nowrap"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -40 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {phrases[index]}
+      </motion.span>
+    </AnimatePresence>
+  </span>
+</h1>
+```
+
+- `inline-block` (pas `block`) sur la `motion.span` — **critique** : avec `block`, l'élément prend la largeur du conteneur, pas la largeur du texte. Combiné à `background-clip: text` (utilisé par `.text-brand-gradient`), les caractères qui débordent à droite sont **transparents** (text-fill-color: transparent, sans fond derrière eux) et semblent coupés. `inline-block` dimensionne l'élément au texte exact → dégradé appliqué sur toute la phrase.
+- `clipPath: "inset(0 -9999px)"` sur le conteneur (à la place de `overflow-hidden`) — clippe uniquement en vertical (masque le `y: ±40` de l'animation) sans clipper horizontalement, ce qui permettrait à un texte long de déborder dans le conteneur parent `overflow-hidden`.
+- `whitespace-nowrap` empêche le retour à la ligne sur les phrases longues.
+- `mode="wait"` garantit que l'exit se termine avant l'enter (pas de chevauchement).
 
 ---
 

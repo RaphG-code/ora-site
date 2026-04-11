@@ -944,8 +944,9 @@ const App = () => {
 
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") return "light";
-    const stored = window.localStorage.getItem("theme");
-    return stored === "dark" ? "dark" : "light";
+    const stored = window.localStorage.getItem("ora-theme-v2");
+    if (stored === "dark" || stored === "light") return stored;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
   const benefitsRef = useRef<HTMLElement | null>(null);
@@ -1019,8 +1020,20 @@ const App = () => {
     const root = document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
-    window.localStorage.setItem("theme", theme);
+    // localStorage is written only when the user manually toggles (see onToggleTheme)
   }, [theme]);
+
+  // Follow system preference changes when no manual override is stored
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (e: MediaQueryListEvent) => {
+      if (!window.localStorage.getItem("ora-theme-v2")) {
+        setTheme(e.matches ? "dark" : "light");
+      }
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   // Spotlight mouse tracking (RAF-throttled to avoid layout thrashing)
   useEffect(() => {
@@ -1156,7 +1169,10 @@ const App = () => {
 
       <Navigation
         theme={theme}
-        onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+        onToggleTheme={() => {
+          // Toggle provisoire — session uniquement, ne persiste pas en localStorage
+          setTheme(theme === "dark" ? "light" : "dark");
+        }}
         onBookCall={() => openBooking()}
         currentPage={page}
         onNavigate={navigateTo}
