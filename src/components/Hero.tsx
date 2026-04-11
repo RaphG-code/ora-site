@@ -2,24 +2,42 @@ import { forwardRef, useRef, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { LogosSlider } from "./LogosSlider";
 import { AnimatedHeroTitle } from "./ui/animated-hero";
+import Lottie, { type LottieRefCurrentProps } from "lottie-react";
+import hourglassData from "../../public/hourglass-brand.json";
 import {
   useTransform,
   useMotionValue,
+  useMotionValueEvent,
   motion,
   type MotionValue,
 } from "framer-motion";
 
-/* ── Scroll-reveal character ─────────────────────────────────── */
-const ScrollChar: React.FC<{
-  char: string;
-  progress: MotionValue<number>;
-  range: [number, number];
-}> = ({ char, progress, range }) => {
-  const opacity = useTransform(progress, range, [0.08, 1]);
+/* ── Lottie Hourglass ────────────────────────────────────────── */
+const TOTAL_FRAMES = 62; // animation op value
+
+const HourglassLottie: React.FC<{ progress: MotionValue<number> }> = ({ progress }) => {
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
+
+  // Drive animation frame directly from scroll progress
+  useMotionValueEvent(progress, "change", (val) => {
+    lottieRef.current?.goToAndStop(val * TOTAL_FRAMES, true);
+  });
+
   return (
-    <motion.span style={{ opacity, display: "inline-block" }}>
-      {char === " " ? "\u00A0" : char}
-    </motion.span>
+    <div
+      className="w-48 md:w-64 lg:w-72"
+      style={{
+        filter:
+          "drop-shadow(0 0 32px rgba(59,130,246,0.20)) drop-shadow(0 0 10px rgba(13,148,136,0.15))",
+      }}
+    >
+      <Lottie
+        lottieRef={lottieRef}
+        animationData={hourglassData}
+        autoplay={false}
+        loop={false}
+      />
+    </div>
   );
 };
 
@@ -117,41 +135,24 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
       requestAnimationFrame(() => setHeroReady(true));
     }, []);
 
-    /* ── TRUE SCROLL-LOCK: phase 1 = letters, phase 2 = video slides up ── */
+    /* ── TRUE SCROLL-LOCK: phase 1 = text+hourglass, phase 2 = video slides up ── */
     const revealProgress = useMotionValue(0);
-    const videoSlide = useMotionValue(0);
-    const videoSlideY = useTransform(videoSlide, [0, 1], ["0vh", "-100vh"]);
-    const textFadeOut = useTransform(videoSlide, [0, 0.4], [1, 0]);
-    const lockRef = useRef<HTMLDivElement>(null);
-    const isLockedRef = useRef(false);
-    const [textVisible, setTextVisible] = useState(false);
+    const videoSlide     = useMotionValue(0);
+    const videoSlideY    = useTransform(videoSlide, [0, 1], ["0vh", "-100vh"]);
+    const textFadeOut    = useTransform(videoSlide, [0, 0.4], [1, 0]);
+    const lockRef        = useRef<HTMLDivElement>(null);
+    const isLockedRef    = useRef(false);
 
-    const revealLines = [
-      "Le temps est votre actif le plus précieux.",
-      "Cessez de le gaspiller sur Excel.",
-      "Ora construit des automatisations sur mesure",
-      "qui tournent silencieusement en arrière-plan.",
-    ];
-    const totalChars = revealLines.reduce((sum, l) => sum + l.length, 0);
+    /* ── Text line reveal motion values (slightly faster reveal) ── */
+    const l1o  = useTransform(revealProgress, [0,    0.22], [0, 1]);
+    const l1y  = useTransform(revealProgress, [0,    0.22], [24, 0]);
+    const l2o  = useTransform(revealProgress, [0.20, 0.40], [0, 1]);
+    const l2y  = useTransform(revealProgress, [0.20, 0.40], [24, 0]);
+    const l3o  = useTransform(revealProgress, [0.38, 0.58], [0, 1]);
+    const l3y  = useTransform(revealProgress, [0.38, 0.58], [24, 0]);
+    const ctaO = useTransform(revealProgress, [0.60, 0.75], [0, 1]);
 
-    // 1) Entrance animation — text fades up when section is ~30% visible
-    useEffect(() => {
-      const el = lockRef.current;
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setTextVisible(true);
-            obs.disconnect();
-          }
-        },
-        { threshold: 0.3 },
-      );
-      obs.observe(el);
-      return () => obs.disconnect();
-    }, []);
-
-    // 2) Scroll lock — activates when section is ~90% visible
+    // Activate scroll-lock when section reaches ~90% visibility
     useEffect(() => {
       const el = lockRef.current;
       if (!el) return;
@@ -168,9 +169,9 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
       return () => observer.disconnect();
     }, []);
 
-    // 3) Capture wheel + touch → phase 1 (letters) then phase 2 (video slide)
+    // Capture wheel + touch → phase 1 (text reveal) then phase 2 (video slide)
     useEffect(() => {
-      const SPEED = 3600;
+      const SPEED       = 3600;
       const SLIDE_SPEED = 2000;
 
       const unlock = () => {
@@ -255,7 +256,6 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
           {/* ── Background ────────────────────────────────────── */}
           <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
             <div className="absolute inset-0 bg-[#fcfbf7] dark:bg-[#111827]" />
-            {/* Subtle gradient orbs */}
             <div
               className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full"
               style={{
@@ -273,7 +273,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
           </div>
 
           {/* ═══════════════════════════════════════════════════
-              SECTION 1 — HERO ABOVE THE FOLD (Alpine.inc style)
+              SECTION 1 — HERO ABOVE THE FOLD
           ═══════════════════════════════════════════════════ */}
           <div className="relative z-10 pt-28 md:pt-32 lg:pt-36 pb-0">
             <div className="max-w-5xl mx-auto px-6 lg:px-10 text-center">
@@ -283,7 +283,7 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
 
               {/* Subtitle */}
               <p className="hero-stagger hero-d2 mt-6 text-[clamp(1rem,2vw,1.175rem)] leading-[1.75] text-gray-500 dark:text-gray-400 font-inter max-w-2xl mx-auto">
-                Ora crée des automatisations sur mesure pour vos rapports, réconciliations et factures &mdash; votre équipe se concentre sur les décisions, pas la saisie.
+                Ora crée des automatisations sur-mesure pour traiter vos données, afin que votre équipe se concentre sur ce qui compte vraiment.
               </p>
 
               {/* CTAs */}
@@ -323,7 +323,6 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
             {/* ── App screenshot / browser frame ─────────────── */}
             <div className="hero-stagger hero-d4 relative z-10 mt-10 mx-auto max-w-6xl px-6 lg:px-10">
               <div className="browser-frame overflow-hidden">
-                {/* Browser chrome */}
                 <div className="browser-chrome">
                   <div className="browser-dots">
                     <div className="browser-dot browser-dot-red" />
@@ -335,7 +334,6 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
                   </div>
                   <div style={{ width: 56 }} />
                 </div>
-                {/* Video */}
                 <video
                   src="/demo-main1-safari.mp4"
                   autoPlay
@@ -356,64 +354,64 @@ const Hero = forwardRef<HTMLElement, HeroProps>(
           </div>
 
           {/* ═══════════════════════════════════════════════════
-              SECTION 2A — SCROLL-LOCK LETTER REVEAL
+              SECTION 2A — SCROLL-LOCK: sablier + texte
           ═══════════════════════════════════════════════════ */}
           <div
             ref={lockRef}
-            className="relative z-[1] min-h-screen flex items-center justify-center bg-[#fcfbf7] dark:bg-[#111827]"
+            className="relative z-[1] min-h-screen flex items-center bg-[#fcfbf7] dark:bg-[#111827]"
           >
             <motion.div
-              className="text-center max-w-4xl mx-auto px-6 lg:px-10"
-              style={{
-                opacity: textVisible ? textFadeOut : 0,
-                transform: textVisible ? undefined : "translateY(40px)",
-                transition: textVisible
-                  ? undefined
-                  : "opacity 800ms cubic-bezier(.22,1,.36,1), transform 800ms cubic-bezier(.22,1,.36,1)",
-              }}
+              className="w-full max-w-5xl mx-auto px-6 lg:px-10 py-16"
+              style={{ opacity: textFadeOut }}
             >
-              {revealLines.map((line, li) => {
-                const lineStart = revealLines
-                  .slice(0, li)
-                  .reduce((s, l) => s + l.length, 0);
-                return (
-                  <p
-                    key={li}
-                    className="font-poppins text-2xl md:text-[2.1rem] lg:text-[2.6rem] font-medium leading-[1.55] tracking-[-0.025em] text-[#111827] dark:text-white"
-                  >
-                    {line.split("").map((char: string, ci: number) => {
-                      const idx = lineStart + ci;
-                      const start = (idx / totalChars) * 0.9;
-                      const end = Math.min(start + 0.06, 0.95);
-                      return (
-                        <ScrollChar
-                          key={ci}
-                          char={char}
-                          progress={revealProgress}
-                          range={[start, end]}
-                        />
-                      );
-                    })}
-                  </p>
-                );
-              })}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-              {/* CTA button — fades in once text fully revealed */}
-              <motion.button
-                onClick={openBooking}
-                className={[
-                  "mt-10 inline-flex items-center gap-2 px-7 py-3.5 rounded-full",
-                  "text-[15px] font-semibold font-inter text-white",
-                  "bg-gradient-to-r from-[#3b82f6] to-[#0d9488]",
-                  "shadow-[0_2px_14px_rgba(59,130,246,0.30)]",
-                  "hover:shadow-[0_4px_24px_rgba(59,130,246,0.42)]",
-                  "hover:-translate-y-px transition-all duration-150",
-                ].join(" ")}
-                style={{ opacity: useTransform(revealProgress, [0.8, 1], [0, 1]) }}
-              >
-                Réserver un appel
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
+                {/* ── Left — Hourglass ── */}
+                <div className="flex items-center justify-center order-2 md:order-1">
+                  <HourglassLottie progress={revealProgress} />
+                </div>
+
+                {/* ── Right — Text ── */}
+                <div className="flex flex-col justify-center gap-6 order-1 md:order-2">
+                  <motion.p
+                    className="font-poppins text-2xl md:text-[1.75rem] lg:text-[2rem] font-medium leading-[1.5] tracking-[-0.025em] text-[#111827] dark:text-white"
+                    style={{ opacity: l1o, y: l1y }}
+                  >
+                    Votre temps est votre actif le plus précieux.
+                  </motion.p>
+
+                  <motion.p
+                    className="font-poppins text-2xl md:text-[1.75rem] lg:text-[2rem] font-medium leading-[1.5] tracking-[-0.025em] text-[#111827] dark:text-white"
+                    style={{ opacity: l2o, y: l2y }}
+                  >
+                    Cessez de le gaspiller sur Excel.
+                  </motion.p>
+
+                  <motion.p
+                    className="font-poppins text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.25] tracking-[-0.03em] text-brand-gradient mt-2"
+                    style={{ opacity: l3o, y: l3y }}
+                  >
+                    Utilisez Ora.
+                  </motion.p>
+
+                  <motion.button
+                    onClick={openBooking}
+                    className={[
+                      "mt-4 w-fit inline-flex items-center gap-2 px-7 py-3.5 rounded-full",
+                      "text-[15px] font-semibold font-inter text-white",
+                      "bg-gradient-to-r from-[#3b82f6] to-[#0d9488]",
+                      "shadow-[0_2px_14px_rgba(59,130,246,0.30)]",
+                      "hover:shadow-[0_4px_24px_rgba(59,130,246,0.42)]",
+                      "hover:-translate-y-px transition-all duration-150",
+                    ].join(" ")}
+                    style={{ opacity: ctaO }}
+                  >
+                    Réserver un appel
+                    <ArrowRight className="w-4 h-4" />
+                  </motion.button>
+                </div>
+
+              </div>
             </motion.div>
           </div>
 
