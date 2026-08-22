@@ -554,7 +554,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                     lignes à 21 px, titre et chapô indistincts. */}
                 <p className="max-w-[46ch] px-5 pt-8 md:px-12 md:pt-16 font-instrument font-normal text-[1.2rem] md:text-[1.7rem] leading-[1.28] tracking-[-0.02em]">
                   <span className="text-[#111827] dark:text-white">{it.lead}</span>{" "}
-                  <span className="text-[#6b7688] max-md:mt-2.5 max-md:block max-md:font-inter max-md:text-[0.9rem] max-md:leading-[1.55] max-md:tracking-normal dark:text-gray-500">{it.rest}</span>
+                  <span className="text-[#6b7688] max-md:mt-2.5 max-md:block max-md:font-inter max-md:text-[0.95rem] max-md:leading-[1.55] max-md:tracking-normal dark:text-gray-500">{it.rest}</span>
                 </p>
 
                 {it.media === "previsionnel" ? (

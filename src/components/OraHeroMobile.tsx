@@ -105,7 +105,14 @@ export default function OraHeroMobile() {
             OraHeroDemo.tsx. */}
         {/* h1 : c'est le titre de la page sur téléphone, le hero desktop
             étant masqué sous md. Voir le pavé d'OraHeroDemo. */}
-        <h1 className="antialiased mt-3 font-instrument font-normal text-[clamp(2.05rem,9.4vw,2.9rem)] leading-[1.06] tracking-[-0.035em] text-[#111827] dark:text-white">
+        {/* 9,4vw → 8,3vw (2026-08-22, captures DataSnipper fournies par le
+            client). Le titre de référence tient en DEUX lignes ; le nôtre en
+            faisait QUATRE à 37 px, soit 160 px du premier écran pour la seule
+            accroche, et la réplique du logiciel se retrouvait sous la ligne de
+            flottaison. À 32 px il tient en trois — la troisième est imposée par
+            le `block` qui coupe après « Plus de productivité, », et ce
+            découpage-là est repris du hero du bureau, il ne bouge pas. */}
+        <h1 className="antialiased mt-3 font-instrument font-normal text-[clamp(1.9rem,8.3vw,2.65rem)] leading-[1.06] tracking-[-0.035em] text-[#111827] dark:text-white">
           {/* Seconde ligne en dégradé de marque (client 2026-08-11 : « repasse
               cela en bleu »), au mot et au traitement près comme le hero
               desktop, sinon mobile et desktop ne montrent plus le même
@@ -118,19 +125,30 @@ export default function OraHeroMobile() {
 
         {/* Même phrase que le hero desktop, au mot près (voir le pavé
             d'OraHeroDemo : elle nomme le LOGICIEL, client 2026-08-18). */}
-        <p className="mt-3.5 font-instrument font-normal text-[16.5px] leading-[1.45] text-gray-500 dark:text-gray-400">
+        <p className="mt-4 font-instrument font-normal text-[16.5px] leading-[1.45] text-gray-500 dark:text-gray-400">
           {t({
             fr: "Le logiciel qui reprend le répétitif comptable, pour rediriger votre temps vers le conseil.",
             en: "The software that takes over repetitive accounting work, redirecting your time to advisory.",
           })}
         </p>
 
-        {/* Touch target kept at 52px tall. */}
+        {/* PLEINE LARGEUR (2026-08-22, captures DataSnipper fournies par le
+            client). C'est le geste le plus net de la référence : l'appel n'y
+            est pas une pastille posée au milieu d'une ligne vide, c'est un BLOC
+            qui prend la colonne, haut de ~50 px. Une pastille de 232 px dans
+            une colonne de 350 laisse 60 px de blanc de chaque côté et se lit
+            comme un bouton secondaire.
+            Ce qu'on ne reprend PAS : la référence en empile DEUX (démo +
+            vidéo). Le second bouton du hero mobile a été retiré à la demande du
+            client le 2026-08-20 (« why did you add the Book a Call button?
+            there is already a button for it ») — on prend la géométrie, pas le
+            compte. Et le rayon reste la pastille : c'est la forme des boutons
+            d'Ora partout ailleurs, la référence a la sienne. */}
         <a
           href="https://ora-solution.com/demo"
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-5 inline-flex h-[42px] items-center justify-center gap-2 rounded-full bg-[#3b82f6] px-6 font-inter font-semibold text-[14px] text-white shadow-[0_14px_32px_-12px_rgba(59,130,246,0.6)] active:bg-[#2f6fe0]"
+          className="mt-7 flex h-[50px] w-full items-center justify-center gap-2 rounded-full bg-[#3b82f6] px-6 font-inter font-semibold text-[15px] text-white shadow-[0_14px_32px_-12px_rgba(59,130,246,0.6)] active:bg-[#2f6fe0]"
         >
           {t({ fr: "Commencer", en: "Get started" })}
           <ArrowRight className="h-[18px] w-[18px]" />
@@ -138,7 +156,7 @@ export default function OraHeroMobile() {
 
         {/* Stacked instead of the desktop's one-line « ✦ » list, which wrapped
             awkwardly at this width. */}
-        <ul className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-inter text-[11px] text-gray-400 dark:text-gray-500">
+        <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 font-inter text-[12.5px] text-gray-400 dark:text-gray-500">
           {[
             t({ fr: "Testez Ora sur vos fichiers", en: "Try Ora on your own files" }),
             t({ fr: "Sans installation", en: "No install" }),
