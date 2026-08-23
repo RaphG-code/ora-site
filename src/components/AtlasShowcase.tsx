@@ -927,17 +927,31 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
             </p>
           </div>
 
-          {/* LA GRILLE. Deux colonnes à partir de md, et une seule en dessous :
-              une tuile de 168 px plus deux lignes de texte ne tiennent pas à
-              deux de front sur un téléphone.
+          {/* LA GRILLE. Deux colonnes à partir de md, UNE SEULE en dessous.
+              ⚠ Le bloc était à deux colonnes à TOUTES les largeurs, et le
+              client l'a renvoyé le 2026-08-23, captures du bureau à l'appui :
+              « il faut que le layout ressemble plutôt à cela pour la partie
+              ce qu'Atlas sait faire ». Ce qui fait la référence, ce n'est pas
+              le NOMBRE de colonnes, c'est la PROPORTION de chaque entrée : une
+              tuile franche, le bénéfice en une ou deux lignes à côté, la
+              catégorie en dessous, et de l'air. Sur deux colonnes de téléphone
+              cette proportion est détruite — mesuré à 390 px : 165 px par
+              entrée, dont 62 de tuile et 12 de gouttière, soit 91 px pour le
+              titre, qui tombait en CINQ lignes de trois mots. Une colonne rend
+              252 px au titre, qui reprend ses deux lignes, et la tuile passe de
+              62 à 84 px pour retrouver le rapport tuile / texte du bureau.
+              Le seuil est `md` et non `sm` : entre 640 et 767 la grille à deux
+              colonnes ne laissait que 146 px au titre, soit trois lignes — le
+              même défaut en moins voyant.
               `gap-x-16` est large à dessein — c'est la gouttière de la
               référence, et c'est elle qui empêche de lire la grille en rangées
-              horizontales au lieu de six entrées distinctes. */}
-          <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-8 md:mt-16 md:gap-x-16 md:gap-y-12">
+              horizontales au lieu de six entrées distinctes. Elle n'a plus
+              d'effet sous md, où il n'y a qu'une colonne. */}
+          <div className="mt-8 grid grid-cols-1 gap-x-5 gap-y-8 md:mt-16 md:grid-cols-2 md:gap-x-16 md:gap-y-12">
             {USE_CASES.map((u, i) => {
               const Icon = u.icon;
               return (
-                <article key={u.tag.en} className="flex items-center gap-3 md:gap-7">
+                <article key={u.tag.en} className="flex items-center gap-4 md:gap-7">
                   {/* LA TUILE. Un dégradé de la charte, un voile de bruit, et
                       l'icône de l'usage au centre.
                       · Le dégradé est TOUJOURS pris dans la palette (bleu,
@@ -959,7 +973,7 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
                       `aria-hidden` sur les deux calques : ils ne portent aucune
                       information que le titre à côté ne donne déjà. */}
                   <div
-                    className="relative aspect-square w-[62px] shrink-0 overflow-hidden rounded-[12px] sm:w-[132px] md:w-[150px] md:rounded-[14px] lg:w-[168px]"
+                    className="relative aspect-square w-[84px] shrink-0 overflow-hidden rounded-[12px] sm:w-[132px] md:w-[150px] md:rounded-[14px] lg:w-[168px]"
                     style={{ backgroundImage: TILE_ART[i % TILE_ART.length] }}
                   >
                     <span
@@ -978,10 +992,10 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
                       refuse de descendre sous la largeur de son plus long mot
                       et pousse la tuile hors de la case sur les petits écrans. */}
                   <div className="min-w-0">
-                    <h4 className="font-inter text-[13.5px] font-medium leading-[1.3] tracking-[-0.01em] text-white md:text-[19px]">
+                    <h4 className="font-inter text-[15px] font-medium leading-[1.3] tracking-[-0.01em] text-white md:text-[19px]">
                       {t(u.line)}
                     </h4>
-                    <p className="mt-1.5 font-inter text-[11.5px] leading-tight text-white/40 md:mt-3 md:text-[13.5px]">
+                    <p className="mt-1.5 font-inter text-[12px] leading-tight text-white/40 md:mt-3 md:text-[13.5px]">
                       {t(u.tag)}
                     </p>
                   </div>

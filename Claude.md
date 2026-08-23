@@ -240,10 +240,25 @@ a renvoyé le précédent, et le SEPTIÈME fait loi.
 
 LA SYNTHÈSE, ET C'EST ELLE QUI FAIT LOI : **la COMPOSITION est celle du bureau
 (côte à côte, en grille), les TAILLES sont réduites, et il y a de l'ESPACE.**
-Le modèle explicitement validé est le bloc « What Atlas can do » : deux
-colonnes, tuiles de 62 px, corps de 11 à 13 px, gouttières larges. Aucun des
-deux extrêmes ne passe — ni le bureau écrasé sans air (1), ni la colonne unique
-en gros caractères (2).
+Aucun des deux extrêmes ne passe — ni le bureau écrasé sans air (1), ni la
+colonne unique en gros caractères (2).
+
+⚠ **« Côte à côte » se lit à l'échelle de L'ENTRÉE, pas de la rangée**
+(client 2026-08-23, sur le bloc « Ce qu'Atlas sait faire » : « il faut que le
+layout ressemble plutôt à cela », captures du bureau à l'appui). Le bloc était
+cité ici comme LE modèle validé, à deux colonnes et tuiles de 62 px — et c'est
+lui que le client a renvoyé. Ce qui fait la référence n'est pas le NOMBRE de
+colonnes, c'est la PROPORTION d'une entrée : une tuile franche, le bénéfice sur
+une ou deux lignes à côté d'elle, la catégorie en dessous, et de l'air. Deux
+entrées de front sur 390 px détruisent cette proportion — 165 px par entrée,
+dont 62 de tuile, laissaient 91 px au titre, soit CINQ lignes de trois mots.
+Le bloc passe donc à UNE colonne sous `md`, tuile à 84 px, titre à 15 px sur
+250 px : la proportion du bureau, à l'échelle du téléphone.
+La règle générale : quand une case de grille est déjà un couple
+image + texte, c'est CE couple qu'il faut garder côte à côte ; empiler deux
+cases de front par-dessus revient à diviser par deux la largeur du texte, et
+c'est le texte qui paie. Compter les caractères par ligne avant de doubler une
+colonne (l'anglais est plus court que le français : mesurer les deux).
 
 **Les quatre règles, dans cet ordre :**
 
