@@ -132,26 +132,27 @@ export default function OraHeroMobile() {
           })}
         </p>
 
-        {/* PLEINE LARGEUR (2026-08-22, captures DataSnipper fournies par le
-            client). C'est le geste le plus net de la référence : l'appel n'y
-            est pas une pastille posée au milieu d'une ligne vide, c'est un BLOC
-            qui prend la colonne, haut de ~50 px. Une pastille de 232 px dans
-            une colonne de 350 laisse 60 px de blanc de chaque côté et se lit
-            comme un bouton secondaire.
-            Ce qu'on ne reprend PAS : la référence en empile DEUX (démo +
-            vidéo). Le second bouton du hero mobile a été retiré à la demande du
-            client le 2026-08-20 (« why did you add the Book a Call button?
-            there is already a button for it ») — on prend la géométrie, pas le
-            compte. Et le rayon reste la pastille : c'est la forme des boutons
-            d'Ora partout ailleurs, la référence a la sienne. */}
+        {/* ⚠ PETIT ET DISCRET, ET C'EST UN RETOUR EN ARRIÈRE ASSUMÉ (client
+            2026-08-23 : « le bouton commencer est bien trop large, fais en
+            sorte qu'il soit bien plus petit et discret »).
+            La veille, la lecture des captures DataSnipper avait donné
+            l'inverse : un BLOC pleine largeur de 50 px de haut, parce que la
+            référence y pose son appel en pavé. Le client a tranché contre, et
+            l'arbitrage est le sien — la pastille reprend donc sa place, plus
+            courte encore qu'avant la passe (232 px pleins → ~150 px calés sur
+            le libellé), plus basse (50 → 38 px), en corps de 13,5 px.
+            L'OMBRE PORTÉE PART AVEC. Une nappe bleue de 32 px sous un bouton de
+            38, c'est ce qui le faisait crier ; « discret » vise autant la halo
+            que la géométrie. Le bleu d'aplat et la forme en pastille restent :
+            ce sont les boutons d'Ora partout ailleurs. */}
         <a
           href="https://ora-solution.com/demo"
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-7 flex h-[50px] w-full items-center justify-center gap-2 rounded-full bg-[#3b82f6] px-6 font-inter font-semibold text-[15px] text-white shadow-[0_14px_32px_-12px_rgba(59,130,246,0.6)] active:bg-[#2f6fe0]"
+          className="mt-6 inline-flex h-[38px] items-center justify-center gap-1.5 rounded-full bg-[#3b82f6] px-5 font-inter font-semibold text-[13.5px] text-white active:bg-[#2f6fe0]"
         >
           {t({ fr: "Commencer", en: "Get started" })}
-          <ArrowRight className="h-[18px] w-[18px]" />
+          <ArrowRight className="h-[15px] w-[15px]" />
         </a>
 
         {/* Stacked instead of the desktop's one-line « ✦ » list, which wrapped

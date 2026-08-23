@@ -156,10 +156,10 @@ les rétablir ensemble si la bascule revient un jour :
 
 ---
 
-## Mobile — TOUT ENTRE DANS L'ÉCRAN, ET UNE SEULE CHOSE À LA FOIS (2026-08-22)
+## Mobile — LA COMPOSITION DU BUREAU, EN PLUS PETIT (2026-08-23)
 
-⚠ SIX ARBITRAGES SUCCESSIFS. Lire les six avant de toucher au mobile — chacun a
-renvoyé le précédent, et le SIXIÈME fait loi.
+⚠ SEPT ARBITRAGES SUCCESSIFS. Lire les sept avant de toucher au mobile — chacun
+a renvoyé le précédent, et le SEPTIÈME fait loi.
   1. 2026-08-19 : « je veux la même disposition et layout que sur l'ordinateur,
      il faut juste réduire la taille de beaucoup d'encadrés ». Livré : grilles
      du bureau tenues à largeur de téléphone, rembourrages compactés.
@@ -180,36 +180,63 @@ renvoyé le précédent, et le SIXIÈME fait loi.
      their design or the whole thing to see at once […] when there is a true
      design side by side, put them side by side so small ». `SwipeDeck`
      supprimé, tout entre dans l'écran par `DesktopScale`.
-  6. **2026-08-22, ET C'EST LA VERSION EN VIGUEUR** : « prends exemple de
-     DataSnipper (pour leur version mobile) et essaye de faire un site mobile
-     aussi minimaliste et bien fait pour mobile, sans inventer d'autre design à
-     part si il le faut ». Aucune identité nouvelle : mêmes polices, mêmes
-     encres, mêmes composants. Ce qui change est la DISCIPLINE — une hiérarchie
-     de titres au lieu d'un pavé, une seule chose à la fois, et jamais de texte
-     suivi dans une demi-colonne. (⚠ datasnipper.com est bloqué par la
-     politique de sortie réseau de la session : la référence n'a pas pu être
-     inspectée, la passe applique les conventions du genre.)
+  6. 2026-08-22 : « prends exemple de DataSnipper (pour leur version mobile) et
+     essaye de faire un site mobile aussi minimaliste et bien fait pour mobile,
+     sans inventer d'autre design à part si il le faut ». Aucune identité
+     nouvelle : mêmes polices, mêmes encres, mêmes composants. Ce qui changeait
+     était la DISCIPLINE — une hiérarchie de titres au lieu d'un pavé, une
+     seule chose à la fois, et le texte suivi sorti des demi-colonnes.
+     (⚠ datasnipper.com est bloqué par la politique de sortie réseau de la
+     session : la référence n'a pas pu être inspectée.)
+  7. **2026-08-23, ET C'EST LA VERSION EN VIGUEUR.** Trois demandes, dont deux
+     renvoient l'arbitrage 6 :
+     · « le bouton commencer est bien trop large, fais en sorte qu'il soit bien
+       plus petit et discret » — l'appel pleine largeur du hero, tiré des
+       captures DataSnipper la veille, est renvoyé. Pastille de 148 × 38 px,
+       corps de 13,5 px, SANS ombre portée.
+     · « pour prévisionnel j'aimerais que tu répliques sur mobile exactement le
+       même encadré que je t'envoie » (capture du panneau du BUREAU).
+     · « pour les autres designs avec l'explication j'aimerais qu'ils soient
+       côte à côte, par exemple pour bilan développé, Conseillez la bonne
+       structure, évaluation financière […] également pour [contrôles et
+       suivi] […] j'aimerais que tu fasses comme pour le deuxième screen et que
+       le tout soit côte à côte comme sur le second screen » — l'empilement du
+       geste 2 de l'arbitrage 6 est renvoyé. **Les rangées texte + maquette
+       redeviennent côte à côte à TOUTES les largeurs.**
 
-**Les trois gestes de l'arbitrage 6, à respecter partout :**
-· **Le chapô se détache du titre sous 768.** Le site compose ses titres en une
-  phrase à deux encres (`<span>` foncé + `<span>` gris dans le même corps) :
-  c'est la figure du bureau et elle tient en deux lignes. Sur 350 px la même
-  figure fait sept lignes à 27 px où rien ne dit où finit le titre — c'est
+**Ce que l'arbitrage 7 garde de l'arbitrage 6, et ce qu'il renvoie :**
+· **GARDÉ — le chapô se détache du titre sous 768.** Le site compose ses titres
+  en une phrase à deux encres (`<span>` foncé + `<span>` gris dans le même
+  corps) : c'est la figure du bureau et elle tient en deux lignes. Sur 350 px la
+  même figure fait sept lignes à 27 px où rien ne dit où finit le titre — c'est
   littéralement le reproche « we even have words that are the same ». Le second
   `<span>` prend donc `max-md:mt-3 max-md:block max-md:font-inter
   max-md:text-[0.95rem] max-md:leading-[1.55] max-md:tracking-normal`, et le
   titre tombe à 1,45 rem. Le bureau ne bouge pas d'un pixel.
-· **Le texte suivi ne partage pas une rangée avec une maquette.** L'arbitrage 5
-  parle de « a TRUE design side by side » : deux DESSINS. Une rangée
-  texte + maquette s'empile (`grid-cols-1 md:grid-cols-[…]`), le filet suit
-  (`max-md:border-b md:border-r`), et la maquette y gagne l'échelle — la carte
-  du bilan passe de 0,42 à 0,88.
-· **Une composition rognée est une composition de BUREAU.** Le rognage à
-  l'échelle 1 (fenêtre débordante à la Stripe) suppose une carte assez large
-  pour qu'il en reste quelque chose. Dans 350 px il ne montre plus que le tiers
-  gauche du logiciel, coupé au milieu d'un mot. Sous 768, la scène se rend
-  ENTIÈRE (`OraAppScene` sans `cropScale`), via `useIsPhone` et non `md:` —
-  deux cadres, pas deux habillages, sinon deux contextes WebGL.
+· **RENVOYÉ — « le texte suivi ne partage pas une rangée avec une maquette ».**
+  L'arbitrage 6 empilait ces rangées sous `md` au nom de la ligne de lecture ;
+  l'argument tient toujours (une demi-colonne de téléphone donne 125 à 155 px
+  utiles), et le client l'a tranché DANS L'AUTRE SENS le 2026-08-23 : c'est la
+  COMPOSITION qui prime. Les quatre rangées d'`AutomationTabs` sont donc côte à
+  côte partout, et le prix est payé en CORPS, jamais en contenu — rien n'est
+  coupé. **Le plancher de 14 px ne vaut plus dans une demi-colonne de
+  téléphone** ; l'échelle y est 12 à 13 px pour un titre, 10,5 à 11,5 px pour
+  une phrase. Il vaut toujours en PLEINE largeur (chapôs, listes, pied de page).
+  Ce qu'on fait pour limiter la casse : rembourrages à `p-3` au lieu de `p-5`,
+  gouttière à 10 px, et une répartition qui favorise le texte quand la cellule
+  voisine est un décor (`grid-cols-[1fr_1.25fr]` sur la rangée « Bilan »).
+· **RENVOYÉ — « une composition rognée est une composition de BUREAU ».** La
+  scène du logiciel de « Contrôles et suivi » est de nouveau ROGNÉE par le bord
+  de sa demi-colonne sur téléphone, comme sur la capture du bureau. Ce qui
+  change d'un palier à l'autre est l'ÉCHELLE, pas le cadrage : `readCrop()` rend
+  0,82 au-dessus de 1024, 0,62 entre 768 et 1024, 0,42 en dessous, de sorte que
+  la part de fenêtre visible reste comparable (430 px de scène à 390 px d'écran,
+  contre 222 si l'échelle du bureau était gardée). Réduite, la scène devient
+  plus COURTE que la colonne voisine : elle est alors centrée verticalement, la
+  marge négative valant la moitié de la hauteur réellement peinte.
+  ⚠ La carte « Gagnez des heures » d'`UseCasesBento`, elle, garde son rendu
+  ENTIER sous 768 (`useIsPhone`) : là c'est une carte pleine largeur et non une
+  demi-colonne, le rognage y montrait le tiers gauche coupé au milieu d'un mot.
 
 LA SYNTHÈSE, ET C'EST ELLE QUI FAIT LOI : **la COMPOSITION est celle du bureau
 (côte à côte, en grille), les TAILLES sont réduites, et il y a de l'ESPACE.**
@@ -239,6 +266,15 @@ en gros caractères (2).
    fiches des pages Solution ; 10,5 px dans 125 px, neuf lignes, sur la carte
    « Un bilan personnalisé ». Le corps plancher du texte suivi sur téléphone
    est **14 px**, jamais 10 ou 11.
+   ⚠⚠ **AMENDÉE UNE SECONDE FOIS LE 2026-08-23 (arbitrage 7), ET CETTE
+   AMENDE-CI PRIME.** Elle ne vaut plus pour les rangées d'`AutomationTabs` :
+   le client les veut CÔTE À CÔTE à toutes les largeurs, texte compris, et
+   c'est la composition qui l'emporte sur la ligne de lecture. Le plancher de
+   14 px ne tient donc que pour le texte de PLEINE largeur ; en demi-colonne de
+   téléphone, l'échelle est 12–13 px pour un titre et 10,5–11,5 px pour une
+   phrase. Les six fiches des pages Solution, les témoignages et le pied de page
+   n'étaient PAS visés par la demande : ils restent pleine largeur et à 14 px.
+   Ne pas généraliser l'un à l'autre sans redemander.
    ⚠ Deux pièges mesurés à 320 px, tous deux dans des cartes `flex` icône +
    texte : un enfant de flex garde `min-width: auto` et refuse de descendre
    sous son mot le plus long (`min-w-0` sur le bloc de texte), et à deux
@@ -254,6 +290,25 @@ en gros caractères (2).
    en languette sur téléphone. Et les hauteurs en pourcentage ne résolvent pas
    sous transform : les nuages d'étiquettes prennent une enveloppe
    `absolute inset-0`, jamais `h-full`.
+   ⚠ **Quand l'enfant est une maquette FLUIDE, la largeur imposée ne suffit
+   pas** (trouvé le 2026-08-23 sur `PrevisionnelStudio`). Ses `sm:`/`md:`/`lg:`
+   répondaient tous NON dans 920 px de mise en page posés sur un écran de
+   390 px : la maquette se composait large AVEC ses replis de téléphone — barre
+   latérale escamotée, colonne « en direct » absente, carte du livrable remise
+   dans le flux. Ni le bureau, ni le téléphone : une troisième mise en page que
+   personne n'avait dessinée. Le patron est un **drapeau `wide`** qui donne
+   l'autre branche de chaque classe repliée (une table `c = { aside: wide ? …
+   : … }` en littéraux entiers, Tailwind ne concatène pas), levé par l'appelant
+   quand `DesktopScale` est en service et LUI SEULEMENT — sur le bureau il doit
+   rester baissé, sinon on paie ses effets de bord (la cale de 24 px du
+   Prévisionnel a allongé l'accueil de 26 px avant d'être conditionnée).
+   Les container queries diraient la même chose sans branche JS ; le projet est
+   en Tailwind 3.4 sans le greffon.
+   ⚠ **Ce qui déborde par POSITION ABSOLUE est tranché.** `DesktopScale` borne
+   sa boîte à la hauteur MESURÉE de l'enfant (`offsetHeight`), or un élément
+   absolu n'y compte pas : la carte flottante du Prévisionnel, à `-bottom-6`,
+   perdait son pied sous l'`overflow: hidden`. Le débord se RÉSERVE par une cale
+   de la même hauteur en fin d'enfant, la carte passant alors à `bottom-0`.
 4. **Vérifier, pas supposer.** Avant de pousser : mesurer la hauteur de CHAQUE
    route à 1440 × 900 avant et après (tolérance : le bruit ci-dessus), et
    vérifier `scrollWidth === clientWidth` à 320, 390, 430, 768, 1024 et 1440.
@@ -291,8 +346,13 @@ que `hidden` monte le composant et paie le contexte WebGL quand même.
   0,34, quand son titre n'en réservait que 56 : d'où `max-md:pr-32` sur les
   titres de `CardShell`.
 
-**Le hero mobile n'a QU'UN bouton**, « Commencer ». Le pavé noir « Réserver un
-appel » qui le suivait a été retiré (client, point 3 : « why did you add the
+**Le hero mobile n'a QU'UN bouton**, « Commencer », et il est PETIT — pastille
+de 148 × 38 px, corps de 13,5 px, sans ombre portée (client 2026-08-23 : « le
+bouton commencer est bien trop large, fais en sorte qu'il soit bien plus petit
+et discret »). ⚠ Le bloc pleine largeur de 50 px tiré des captures DataSnipper
+la veille est RENVOYÉ : ne pas le remettre. « Discret » visait autant le halo
+que la géométrie, d'où la disparition de l'ombre bleue.
+Le pavé noir « Réserver un appel » qui le suivait a été retiré (client, point 3 : « why did you add the
 Book a Call button? there is already a button for it ») : le bureau ne porte
 pas d'équivalent à cet endroit, et la prise de rendez-vous reste atteignable
 par la barre de navigation et par le CTA de fin de page.

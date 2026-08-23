@@ -152,11 +152,72 @@ const rise = (hidden: boolean, armed: boolean, delay: number, dy = 22) => ({
   willChange: armed ? ("transform, opacity" as const) : undefined,
 });
 
-export default function PrevisionnelStudio() {
+/**
+ * ── `wide` : LA COMPOSITION DU BUREAU, IMPOSÉE ────────────────────────────
+ * Client 2026-08-23 : « pour prévisionnel j'aimerais que tu répliques sur
+ * mobile exactement le même encadré que je t'envoie », capture du panneau du
+ * bureau à l'appui — barre latérale, colonne « en direct » et carte flottante
+ * comprises.
+ *
+ * Le panneau est déjà rendu dans une boîte de 920 px par `DesktopScale`, qui la
+ * réduit ensuite à la largeur du téléphone. Mais les points de rupture de
+ * Tailwind interrogent la FENÊTRE, pas la boîte : dans 920 px de mise en page
+ * posés sur un écran de 390, `sm:`, `md:` et `lg:` répondent tous NON. La
+ * maquette se composait donc en 920 px de large AVEC ses replis de téléphone —
+ * pas de barre latérale, pas de panneaux « en direct », carte du livrable
+ * remise dans le flux. C'est-à-dire ni la composition du bureau, ni celle du
+ * téléphone : une troisième, que personne n'avait dessinée.
+ *
+ * `wide` court-circuite les points de rupture et fixe l'état large. Il ne
+ * remplace pas les classes `sm:`/`md:`/`lg:`, il en donne l'AUTRE branche :
+ * hors `DesktopScale` (le zoom plein écran, un usage futur) la maquette garde
+ * son comportement fluide d'origine, replis compris.
+ *
+ * Les container queries auraient dit la même chose sans branche JS — le projet
+ * est en Tailwind 3.4 sans le greffon, ce serait une dépendance de plus pour
+ * un seul composant.
+ */
+export default function PrevisionnelStudio({ wide = false }: { wide?: boolean }) {
   const { t } = useLang();
   const { ref, hidden, armed } = useEnterOnScroll<HTMLDivElement>();
   const steps = STEPS(t);
   const trades = TRADES(t);
+
+  /* Les deux branches côte à côte, une clé par endroit où la mise en page se
+     replie. Écrites en littéraux entiers : Tailwind lit le fichier, il ne
+     concatène pas de fragments. */
+  const c = {
+    win: wide ? "mr-[74px]" : "md:mr-[74px]",
+    aside: wide ? "flex w-[164px]" : "hidden sm:flex sm:w-[128px] lg:w-[164px]",
+    engCard: wide ? "block" : "hidden lg:block",
+    topbar: wide ? "px-5" : "px-4 md:px-5",
+    topIconSm: wide ? "block" : "hidden sm:block",
+    topIconMd: wide ? "block" : "hidden md:block",
+    body: wide ? "px-6 py-5" : "px-4 py-4 md:px-6 md:py-5",
+    modIcon: wide ? "h-10 w-10" : "h-9 w-9 md:h-10 md:w-10",
+    modGlyph: wide ? "h-[18px] w-[18px]" : "h-4 w-4 md:h-[18px] md:w-[18px]",
+    modTitle: wide ? "text-[19px]" : "text-[17px] md:text-[19px]",
+    modSub: wide ? "text-[11.5px]" : "text-[10.5px] md:text-[11.5px]",
+    steps: wide ? "grid-cols-6" : "grid-cols-3 sm:grid-cols-6",
+    stepLabel: wide ? "text-[11px]" : "text-[10.5px] md:text-[11px]",
+    split: wide ? "grid-cols-[1fr_202px]" : "lg:grid-cols-[1fr_202px]",
+    lede: wide ? "text-[11px]" : "text-[10.5px] md:text-[11px]",
+    trades: wide ? "grid-cols-2 gap-x-6" : "sm:grid-cols-2 sm:gap-x-6",
+    tradeRule: wide ? "[&:nth-child(2)]:border-t-0" : "sm:[&:nth-child(2)]:border-t-0",
+    tradeTitle: wide ? "text-[11.5px]" : "text-[11px] md:text-[11.5px]",
+    tradeSub: wide ? "text-[9.5px]" : "text-[9px] md:text-[9.5px]",
+    live: wide ? "flex flex-col gap-3" : "hidden lg:flex lg:flex-col lg:gap-3",
+    /* La carte flottante. `bottom-0` et non `-bottom-6` dans la branche
+       large : `DesktopScale` borne sa boîte à la hauteur MESURÉE de l'enfant,
+       or un élément en position absolue ne compte pas dans cette hauteur — les
+       24 px de débord se faisaient trancher par son `overflow: hidden`. Le
+       débord est donc RÉSERVÉ par la cale de 24 px posée en fin de composant :
+       la carte descend d'autant sous le pied de la fenêtre, exactement comme
+       le `-bottom-6` du bureau, et la boîte le sait. */
+    card: wide
+      ? "absolute bottom-0 right-0 w-[320px]"
+      : "relative mt-4 w-full md:absolute md:-bottom-6 md:right-0 md:mt-0 md:w-[292px] lg:w-[320px]",
+  };
 
   return (
     <div ref={ref} className="relative mx-auto w-full max-w-[920px]">
@@ -183,10 +244,10 @@ export default function PrevisionnelStudio() {
           déborde, comme le panneau de courriel de la référence attio. */}
       <div
         style={rise(hidden, armed, 60, 30)}
-        className="flex overflow-hidden rounded-[14px] bg-white ring-1 ring-[#0a2540]/[0.09] shadow-[0_30px_72px_-34px_rgba(10,37,64,0.5)] md:mr-[74px]"
+        className={`flex overflow-hidden rounded-[14px] bg-white ring-1 ring-[#0a2540]/[0.09] shadow-[0_30px_72px_-34px_rgba(10,37,64,0.5)] ${c.win}`}
       >
         {/* ── Sidebar, comme dans l'app ── */}
-        <aside className="hidden shrink-0 flex-col border-r border-[#0a2540]/[0.07] px-3 py-4 sm:flex sm:w-[128px] lg:w-[164px]">
+        <aside className={`shrink-0 flex-col border-r border-[#0a2540]/[0.07] px-3 py-4 ${c.aside}`}>
           <div className="flex items-center gap-1.5 px-1">
             <img src="/logos/icon-color.png" alt="" className="h-[18px] w-auto" draggable={false} />
             <span className="font-poppins text-[15px] font-semibold tracking-[-0.02em] text-[#111827]">Ora</span>
@@ -208,7 +269,7 @@ export default function PrevisionnelStudio() {
           {/* La carte Ora Engineering, en pied de sidebar comme dans l'app.
               Alignée à gauche et sans pastille de couleur : centrée, elle
               faisait bloc publicitaire au milieu d'une colonne de navigation. */}
-          <div className="mt-auto hidden rounded-[10px] border border-[#0a2540]/[0.07] px-2.5 py-2.5 lg:block">
+          <div className={`mt-auto rounded-[10px] border border-[#0a2540]/[0.07] px-2.5 py-2.5 ${c.engCard}`}>
             <div className="flex items-center gap-1.5 font-inter text-[10px] font-semibold text-[#111827]">
               <Sparkles className="h-3 w-3 text-[#3b82f6]" strokeWidth={2} />
               Ora Engineering
@@ -228,7 +289,7 @@ export default function PrevisionnelStudio() {
               notifications sont tombées : attio n'encadre pas ses commandes de
               barre, il pose des icônes nues et laisse le filet du bandeau faire
               la séparation. Le compteur devient un POINT, pas un jeton chiffré. */}
-          <div className="flex items-center justify-between gap-3 border-b border-[#0a2540]/[0.07] px-4 py-2.5 md:px-5">
+          <div className={`flex items-center justify-between gap-3 border-b border-[#0a2540]/[0.07] py-2.5 ${c.topbar}`}>
             <div className="flex items-center gap-1.5 font-inter text-[11.5px] text-gray-400">
               <span>{t({ fr: "Accueil", en: "Home" })}</span>
               <ChevronRight className="h-3 w-3" strokeWidth={2} />
@@ -237,9 +298,9 @@ export default function PrevisionnelStudio() {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <Moon className="hidden h-3.5 w-3.5 text-gray-400 sm:block" strokeWidth={1.9} />
-              <MessageCircle className="hidden h-3.5 w-3.5 text-gray-400 md:block" strokeWidth={1.9} />
-              <span className="relative hidden sm:block">
+              <Moon className={`h-3.5 w-3.5 text-gray-400 ${c.topIconSm}`} strokeWidth={1.9} />
+              <MessageCircle className={`h-3.5 w-3.5 text-gray-400 ${c.topIconMd}`} strokeWidth={1.9} />
+              <span className={`relative ${c.topIconSm}`}>
                 <Bell className="h-3.5 w-3.5 text-gray-400" strokeWidth={1.9} />
                 <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#3b82f6] ring-2 ring-white" />
               </span>
@@ -249,20 +310,20 @@ export default function PrevisionnelStudio() {
             </div>
           </div>
 
-          <div className="px-4 py-4 md:px-6 md:py-5">
+          <div className={c.body}>
             {/* Bloc de titre du module. Le fil d'Ariane est remonté dans le
                 bandeau, à la place qu'il occupe chez attio : deux repères de
                 navigation empilés à trois centimètres l'un de l'autre se
                 répétaient. */}
             <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#f4f7fd] ring-1 ring-[#3b82f6]/20 md:h-10 md:w-10">
-                <Store className="h-4 w-4 text-[#3b82f6] md:h-[18px] md:w-[18px]" strokeWidth={1.9} />
+              <span className={`grid shrink-0 place-items-center rounded-[10px] bg-[#f4f7fd] ring-1 ring-[#3b82f6]/20 ${c.modIcon}`}>
+                <Store className={`text-[#3b82f6] ${c.modGlyph}`} strokeWidth={1.9} />
               </span>
               <div className="min-w-0">
-                <div className="font-poppins text-[17px] font-semibold tracking-[-0.025em] text-[#111827] md:text-[19px]">
+                <div className={`font-poppins font-semibold tracking-[-0.025em] text-[#111827] ${c.modTitle}`}>
                   {t({ fr: "Prévisionnel d'activité", en: "Business forecast" })}
                 </div>
-                <div className="mt-0.5 truncate font-inter text-[10.5px] text-gray-400 md:text-[11.5px]">
+                <div className={`mt-0.5 truncate font-inter text-gray-400 ${c.modSub}`}>
                   {t({ fr: "Le plan du métier, ses indicateurs, prêt pour la banque", en: "The trade's plan, its indicators, ready for the bank" })}
                 </div>
               </div>
@@ -275,7 +336,7 @@ export default function PrevisionnelStudio() {
                 désormais d'un bord à l'autre (1 px gris), et seule l'étape
                 courante l'épaissit en bleu — c'est la barre de progression
                 d'attio, et elle dit d'un coup d'œil où l'on en est. */}
-            <div className="mt-5 grid grid-cols-3 sm:grid-cols-6">
+            <div className={`mt-5 grid ${c.steps}`}>
               {steps.map((s, i) => (
                 <div key={s} style={rise(hidden, armed, 240 + i * 55, 10)} className="pr-3">
                   <span
@@ -284,7 +345,7 @@ export default function PrevisionnelStudio() {
                     }`}
                   />
                   <span
-                    className={`mt-2 block truncate font-inter text-[10.5px] md:text-[11px] ${
+                    className={`mt-2 block truncate font-inter ${c.stepLabel} ${
                       i === 0 ? "font-semibold text-[#111827]" : "font-medium text-gray-400"
                     }`}
                   >
@@ -294,7 +355,7 @@ export default function PrevisionnelStudio() {
               ))}
             </div>
 
-            <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_202px]">
+            <div className={`mt-6 grid gap-5 ${c.split}`}>
               {/* ── L'ÉTAPE COURANTE : LE CHOIX DU MÉTIER ────────────────────
                   ⚠ NEUF CARTES SONT DEVENUES NEUF LIGNES, et c'est le cœur de
                   la refonte demandée (client 2026-08-15 : « quelque chose de
@@ -315,14 +376,14 @@ export default function PrevisionnelStudio() {
                 <div className="font-inter text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-400">
                   {t({ fr: "Le métier", en: "The trade" })}
                 </div>
-                <p className="mt-2 max-w-[54ch] font-inter text-[10.5px] leading-relaxed text-gray-500 md:text-[11px]">
+                <p className={`mt-2 max-w-[54ch] font-inter leading-relaxed text-gray-500 ${c.lede}`}>
                   {t({
                     fr: "Choisissez le métier du client : il règle le vocabulaire du dossier et les indicateurs que le financeur lit en premier.",
                     en: "Choose the client's trade: it sets the file's vocabulary and the indicators the lender reads first.",
                   })}
                 </p>
 
-                <div className="mt-3 grid sm:grid-cols-2 sm:gap-x-6">
+                <div className={`mt-3 grid ${c.trades}`}>
                   {trades.map((m, i) => {
                     const Icon = m.icon;
                     return (
@@ -333,7 +394,7 @@ export default function PrevisionnelStudio() {
                            sur la première de chaque colonne : en bas, la
                            dernière ligne de la colonne courte laisserait un
                            trait qui ne sépare rien. */
-                        className={`flex items-center gap-2.5 border-t border-[#0a2540]/[0.07] py-2 first:border-t-0 sm:[&:nth-child(2)]:border-t-0 ${
+                        className={`flex items-center gap-2.5 border-t border-[#0a2540]/[0.07] py-2 first:border-t-0 ${c.tradeRule} ${
                           m.on ? "-mx-2 rounded-[8px] border-transparent bg-[#f4f7fd] px-2" : ""
                         }`}
                       >
@@ -350,7 +411,7 @@ export default function PrevisionnelStudio() {
                         </span>
                         <div className="min-w-0 flex-1">
                           <div
-                            className={`truncate font-inter text-[11px] leading-tight md:text-[11.5px] ${
+                            className={`truncate font-inter leading-tight ${c.tradeTitle} ${
                               m.on ? "font-semibold text-[#111827]" : "font-medium text-[#42506b]"
                             }`}
                           >
@@ -360,7 +421,7 @@ export default function PrevisionnelStudio() {
                               sur trois lignes de 9 px : illisible, et c'est elle
                               qui faisait la texture. Elle donne ici le registre
                               du métier, pas sa fiche. */}
-                          <div className="truncate font-inter text-[9px] leading-snug text-gray-400 md:text-[9.5px]">
+                          <div className={`truncate font-inter leading-snug text-gray-400 ${c.tradeSub}`}>
                             {m.sub}
                           </div>
                         </div>
@@ -385,7 +446,7 @@ export default function PrevisionnelStudio() {
                   maquette qu'on aurait oublié de finir. Un squelette en aplats
                   gris très pâles dit la même chose — « ça se remplira ici » —
                   dans la langue des interfaces modernes. */}
-              <div className="hidden lg:flex lg:flex-col lg:gap-3">
+              <div className={c.live}>
                 <div
                   style={rise(hidden, armed, 520, 14)}
                   className="rounded-[10px] border border-[#0a2540]/[0.07] p-3"
@@ -456,7 +517,7 @@ export default function PrevisionnelStudio() {
            comme le panneau de courriel de la référence attio : le panneau
            reprend son titre, et le débordement fait lire les deux plans. La
            nappe grise du panneau réserve la place en dessous (pb-24). */
-        className="relative z-10 mt-4 w-full rounded-[12px] bg-white p-4 ring-1 ring-[#0a2540]/[0.09] shadow-[0_26px_60px_-24px_rgba(10,37,64,0.4)] md:absolute md:-bottom-6 md:right-0 md:mt-0 md:w-[292px] lg:w-[320px]"
+        className={`z-10 rounded-[12px] bg-white p-4 ring-1 ring-[#0a2540]/[0.09] shadow-[0_26px_60px_-24px_rgba(10,37,64,0.4)] ${c.card}`}
       >
         <div className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[#f4f7fd] ring-1 ring-[#3b82f6]/20">
@@ -499,6 +560,15 @@ export default function PrevisionnelStudio() {
           </span>
         </div>
       </div>
+
+      {/* LA CALE DU DÉBORD, branche large seulement. Voir `c.card` : la carte
+          est en position absolue, elle ne pousse rien, et `DesktopScale` borne
+          sa boîte à la hauteur mesurée de l'enfant. Sans ces 24 px de hauteur
+          déclarée, le pied de la carte — nom du fichier et pastille « Prêt à
+          défendre » — passait sous le couteau de l'`overflow: hidden`. Sur le
+          bureau la cale n'existe pas : `-bottom-6` y déborde librement sur la
+          nappe grise, dont le `pb-24` réserve déjà la place. */}
+      {wide && <div aria-hidden className="h-6" />}
     </div>
   );
 }
