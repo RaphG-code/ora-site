@@ -473,7 +473,20 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
         <div className={`grid border-t ${rule} lg:grid-cols-[minmax(0,22rem)_1fr]`}>
           {/* ── Le rail d'onglets, épinglé pendant que la droite défile ───── */}
           <div className={`hidden lg:block lg:border-r ${rule}`}>
-            <ul className="sticky top-28 space-y-4 py-14 pl-6 md:pl-10 pr-6 md:space-y-5">
+            {/* ⚠ RAIL RESSERRÉ le 2026-08-20 (client, capture attio à l'appui :
+                « leurs entrées sont bien plus petites et plus minimalistes que
+                sur mon site… c'est moins agressif pour les yeux »). Les
+                libellés faisaient 20 px sur téléphone et 23 px à partir de md,
+                en Instrument Sans : à cette taille une liste de six entrées se
+                lit comme six titres, pas comme une navigation. Ils passent à
+                15/16 px en Inter, et l'interligne suit (space-y-4/5 → 2/2.5).
+                POURQUOI INTER ET NON INSTRUMENT SANS : la charte range les
+                grands titres d'affichage en Instrument Sans et les LIBELLÉS
+                D'INTERFACE en Inter. À 20 px on pouvait plaider le titre ; à
+                15 px c'est une navigation, donc Inter. Ce n'est pas en
+                contradiction avec la grille d'Atlas passée à Instrument Sans le
+                même jour : là-bas ce sont des titres de 21 px. */}
+            <ul className="sticky top-28 space-y-2 py-14 pl-6 md:pl-10 pr-6 md:space-y-2.5">
               {/* Le filet vertical qui porte le repère bleu, doublant le bord
                   gauche de la liste comme sur la référence. */}
               <span aria-hidden className={`absolute inset-y-14 -left-0 w-px ${dk ? "bg-white/10" : "bg-[#0a2540]/[0.10]"}`} style={{ left: 0 }} />
@@ -490,7 +503,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                      référence reste intacte (actif en encre, le reste
                      effacé) : c'est le RANG de l'entrée qui change, pas son
                      état. */
-                  <li key={it.tab} className={`relative ${it.engineering ? "mt-7 border-t border-dashed pt-7 md:mt-8 md:pt-8 " + (dk ? "border-white/15" : "border-[#0a2540]/[0.13]") : ""}`}>
+                  <li key={it.tab} className={`relative ${it.engineering ? "mt-5 border-t border-dashed pt-5 md:mt-6 md:pt-6 " + (dk ? "border-white/15" : "border-[#0a2540]/[0.13]") : ""}`}>
                     {on && (
                       <motion.span
                         aria-hidden
@@ -503,10 +516,14 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                       type="button"
                       onClick={() => animatedScrollToId(`autotab-${i}`, -132)}
                       aria-pressed={on}
-                      className={`flex items-center gap-2.5 text-left font-instrument font-normal text-[1.25rem] md:text-[1.45rem] tracking-[-0.02em] transition-colors duration-200 ${
+                      /* La graisse porte l'état actif à la place du seul
+                         contraste d'encre : à 15 px, l'écart entre #111827 et
+                         #7a8496 ne suffit plus à repérer l'entrée courante d'un
+                         coup d'œil, alors qu'il suffisait à 23 px. */
+                      className={`flex items-center gap-2 py-1 text-left font-inter text-[15px] tracking-[-0.01em] transition-colors duration-200 md:text-[16px] ${
                         on
-                          ? "text-[#111827] dark:text-white"
-                          : "text-[#7a8496] hover:text-[#8d95a6] dark:text-white/25 dark:hover:text-white/50"
+                          ? "font-semibold text-[#111827] dark:text-white"
+                          : "font-normal text-[#7a8496] hover:text-[#5b6577] dark:text-white/30 dark:hover:text-white/55"
                       }`}
                     >
                       {/* LE ✦, ET PAS UNE ICÔNE (client 2026-08-13, deuxième
@@ -531,8 +548,13 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                           retrait fixe de la version précédente était calé sur
                           la pastille de 28 px ; il aurait fallu le remesurer
                           à chaque changement de glyphe ou de graisse. */
-                      <span className="mt-1.5 flex gap-2.5 font-inter text-[12.5px] leading-snug text-[#6b7688] dark:text-gray-500">
-                        <span aria-hidden className="invisible shrink-0 font-instrument text-[1.25rem] leading-none md:text-[1.45rem]">
+                      <span className="mt-1 flex gap-2 font-inter text-[12px] leading-snug text-[#6b7688] dark:text-gray-500">
+                        {/* Le gabarit invisible SUIT la taille du libellé : il
+                            redessine le ✦ et l'écart du bouton pour aligner la
+                            glose dessous sans nombre magique. Il a donc dû
+                            passer de 1,25/1,45 rem à 15/16 px avec lui, sinon
+                            la glose se décalait de six pixels vers la droite. */}
+                        <span aria-hidden className="invisible shrink-0 font-inter text-[15px] leading-none md:text-[16px]">
                           <span className="text-[1.15em]">✦</span>
                         </span>
                         {t({ fr: "Tout ce qui n'entre dans aucune case", en: "Everything that fits no box" })}
@@ -668,23 +690,35 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                         peut donc plus vivre dans un cadre `overflow-hidden` au
                         rapport figé. C'est VideoWithScrubber qui rend les
                         deux, l'un au-dessus de l'autre. */}
-                    <VideoWithScrubber
-                      src={DEMO_CLIP}
-                      wrapperClassName="mx-auto w-full max-w-[880px]"
-                      frameClassName="group/panel relative overflow-hidden rounded-[12px] ring-1 ring-[#0a2540]/[0.10] shadow-[0_24px_60px_-30px_rgba(10,37,64,0.45)] dark:ring-white/10"
-                      frameStyle={{ aspectRatio: "1660 / 1037" }}
-                      className="block h-full w-full object-cover object-bottom"
-                    >
-                      {/* Sur le cadre du clip et non sur la nappe : le clip est
-                          centré et plafonné à 880 px, une pastille posée au coin
-                          de la nappe se serait retrouvée à deux cents pixels de
-                          lui. Elle est décalée à gauche pour ne pas recouvrir le
-                          coin de la fenêtre enregistrée. */}
-                      <ZoomButton
-                        onClick={() => setZoom(i)}
-                        label={t({ fr: "Agrandir la vidéo", en: "Enlarge the video" })}
+                    {/* ⚠ LA PASTILLE EST SORTIE DE LA VIDÉO le 2026-08-21
+                        (client : « tu as mis cette flèche sur la vidéo, il faut
+                        la mettre à côté »). Elle était posée EN SURIMPRESSION
+                        sur le coin haut-droit du clip, comme sur les autres
+                        panneaux — sauf qu'ici le clip est un enregistrement
+                        d'écran : la pastille recouvrait une partie de
+                        l'interface filmée, et rien ne distinguait un bouton du
+                        site d'un bouton de l'application enregistrée.
+                        Elle vit maintenant sur une ligne À ELLE, au-dessus du
+                        clip, alignée à droite sur le même axe de 880 px : elle
+                        reste visiblement rattachée à la vidéo sans mordre
+                        dessus. Le `group/panel` migre avec elle sur le
+                        conteneur commun, sinon le survol du clip n'allumerait
+                        plus la pastille, qui n'en est plus une descendante. */}
+                    <div className="group/panel mx-auto w-full max-w-[880px]">
+                      <div className="mb-3 flex justify-end">
+                        <ZoomButton
+                          onClick={() => setZoom(i)}
+                          label={t({ fr: "Agrandir la vidéo", en: "Enlarge the video" })}
+                          inline
+                        />
+                      </div>
+                      <VideoWithScrubber
+                        src={DEMO_CLIP}
+                        frameClassName="relative overflow-hidden rounded-[12px] ring-1 ring-[#0a2540]/[0.10] shadow-[0_24px_60px_-30px_rgba(10,37,64,0.45)] dark:ring-white/10"
+                        frameStyle={{ aspectRatio: "1660 / 1037" }}
+                        className="block h-full w-full object-cover object-bottom"
                       />
-                    </VideoWithScrubber>
+                    </div>
                     </div>
                     {/* SOUS la vidéo (client 2026-08-13, troisième passe) :
                         deux cartes — à gauche LA CARTE « Bilan développé » de
@@ -1074,7 +1108,25 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
           `zoom` porte l'index du panneau : c'est lui qui donne le titre de la
           fenêtre, donc son nom accessible. */}
       {zoom !== null && ITEMS[zoom] && (
-        <ZoomOverlay title={ITEMS[zoom].tab} onClose={() => setZoom(null)}>
+        /* Le panneau reçoit la copie DÉJÀ ÉCRITE de l'onglet : `lead` est la
+           phrase-bénéfice, `rest` le paragraphe, `examples` la liste à coches
+           quand elle existe (seul « Automatisations » en a une aujourd'hui).
+           Rien n'est rédigé pour la fenêtre : elle montre en grand ce que le
+           panneau dit déjà en petit. */
+        <ZoomOverlay
+          title={ITEMS[zoom].tab}
+          lead={ITEMS[zoom].lead}
+          desc={ITEMS[zoom].rest}
+          checks={ITEMS[zoom].examples}
+          onBook={openBooking}
+          bookLabel={t({ fr: "Réserver un appel", en: "Book a call" })}
+          seeLabel={
+            ITEMS[zoom].media === "video"
+              ? t({ fr: "Voir la démo", en: "Watch the demo" })
+              : t({ fr: "Voir l'aperçu", en: "See the preview" })
+          }
+          onClose={() => setZoom(null)}
+        >
           {ITEMS[zoom].media === "previsionnel" ? (
             <PrevisionnelStudio />
           ) : ITEMS[zoom].media === "video" ? (

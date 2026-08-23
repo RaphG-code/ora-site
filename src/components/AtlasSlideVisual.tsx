@@ -184,6 +184,56 @@ const AV_CSS = `
 .av-row.av-add{background:#c9e9d8}
 .av-seam{position:absolute;left:434px;bottom:0;width:2px;height:340px;border-radius:2px;
   background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.72))}
+
+/* ══ LE MODE SANS TEXTE ═══════════════════════════════════════════════════
+   Client 2026-08-19 : « pour ces encadres, je voudrais qu'il n'y ait pas de
+   texte dedans, juste le design ». Il sert aux VIGNETTES de la grille, ou la
+   planche est reduite a 0,25 : la phrase de la carte blanche s'y rend a 5 px
+   et les petites capitales a 2,5 px. Ce n'est plus du texte, c'est du bruit
+   gris qui salit une composition par ailleurs propre.
+
+   ⚠ LE TEXTE N'EST PAS SUPPRIME, IL EST RENDU TRANSPARENT, et une barre est
+   peinte par-dessus en ::after. C'est le seul moyen de ne RIEN deplacer :
+   chaque libelle garde exactement la largeur et la hauteur qu'il occupait, donc
+   la carte blanche garde sa hauteur (elle depend du nombre de lignes de la
+   phrase, qui varie d'une scene a l'autre), le bandeau bleu garde la sienne, et
+   les six scenes restent superposables a leur version en grand. Le supprimer
+   ferait retomber toutes ces boites et il faudrait re-caler six compositions.
+
+   Les barres reprennent la grammaire deja presente dans les scenes (.av-row,
+   .av-bar, les <i> des tableaux) : meme rayon, memes gris. Le mode ne rajoute
+   donc aucun vocabulaire visuel, il etend celui du dessin au texte.
+
+   La largeur 100 % sur les barres des libelles a largeur automatique (.av-cap
+   et les <b> des pastilles) : leur boite EST celle du texte, la barre epouse
+   donc exactement son empreinte. Les deux libelles du bandeau sont des blocs
+   pleine largeur, eux portent une largeur explicite.
+   (Pas d'accent grave dans ce bloc : on est dans un template literal, une
+   paire de backticks autour d'un bout de code le refermerait en silence.) */
+.av-textless .av-ask,.av-textless .av-ask *{color:transparent}
+.av-textless .av-ask{-webkit-user-select:none;user-select:none}
+.av-textless .av-ask svg{display:none}
+.av-textless .av-ask::after{content:"";position:absolute;left:32px;top:50%;
+  transform:translateY(-50%);height:15px;width:56%;border-radius:99px;background:#e4eaf5}
+
+.av-textless .av-cap,
+.av-textless .av-band .av-k,
+.av-textless .av-band .av-t,
+.av-textless .av-pill b,
+.av-textless .av-tagm b{position:relative;color:transparent;
+  -webkit-user-select:none;user-select:none}
+.av-textless .av-cap::after,
+.av-textless .av-band .av-k::after,
+.av-textless .av-band .av-t::after,
+.av-textless .av-pill b::after,
+.av-textless .av-tagm b::after{content:"";position:absolute;left:0;top:50%;
+  transform:translateY(-50%);border-radius:99px}
+
+.av-textless .av-cap::after{width:100%;height:7px;background:#d3dcea}
+.av-textless .av-pill b::after{width:100%;height:9px;background:#dbe3f0}
+.av-textless .av-tagm b::after{width:100%;height:9px;background:#dbe3f0}
+.av-textless .av-band .av-k::after{width:62px;height:7px;background:rgba(255,255,255,.55)}
+.av-textless .av-band .av-t::after{width:58%;height:15px;background:rgba(255,255,255,.9)}
 `;
 
 /** L'icône de fichier des références balisées `[[f:…]]`, et de deux pastilles. */
@@ -416,12 +466,23 @@ export default function AtlasSlideVisual({
   visual,
   ask,
   label,
+  textless = false,
 }: {
   visual: AtlasVisual;
   /** La demande, balisée : voir renderAsk. */
   ask: string;
   /** Ce que la scène montre, pour qui ne la voit pas. */
   label: string;
+  /**
+   * Rend la scène SANS AUCUN TEXTE LISIBLE : chaque libellé devient une barre
+   * grise, au vocabulaire des blocs vides déjà présents (voir `.av-textless`
+   * dans AV_CSS). À réserver aux emplacements où la planche est trop réduite
+   * pour que son texte se lise — les vignettes de la grille des usages, où le
+   * facteur tombe à 0,25.
+   * Le texte reste dans le DOM, seulement transparent : c'est ce qui garantit
+   * que rien ne bouge par rapport à la version en grand.
+   */
+  textless?: boolean;
 }) {
   return (
     <>
@@ -429,7 +490,11 @@ export default function AtlasSlideVisual({
       {/* `role="img"` + une étiquette : la scène est une composition de blocs
           vides, elle n'a aucun texte à lire et un lecteur d'écran n'y
           trouverait rien. L'étiquette dit ce qu'elle montre, en une phrase. */}
-      <div className="av-stage" role="img" aria-label={label}>
+      <div
+        className={`av-stage${textless ? " av-textless" : ""}`}
+        role="img"
+        aria-label={label}
+      >
         <div className={`av-plate av-plate-${visual}`}>
           <div className={`av-inner av-inner-${visual}`} />
           {SCENES[visual]}

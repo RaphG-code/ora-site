@@ -46,24 +46,45 @@ export const OA_ASPECT = H / W;
  *
  *  ⚠ Ce tableau alimente AUSSI le hero de la page d'accueil, qui monte la même
  *  scène. C'est voulu : les deux endroits montrent le même logiciel. */
+/* ⚠ LES TITRES SONT TRADUITS DEPUIS LE 2026-08-19 (client : « pour la partie
+ *  de réplication du logiciel tout en haut, traduis les modules en anglais pour
+ *  la version anglaise »). Ils étaient les DERNIERS textes français en dur de
+ *  la scène : tout le reste — salutation, deux cartes bleues, encart Ora
+ *  Engineering, sous-titres des douze tuiles — passait déjà par `t()`. Un
+ *  visiteur anglophone lisait donc douze intitulés français au-dessus de douze
+ *  sous-titres anglais, ce qui se lit comme un défaut, pas comme du bilingue.
+ *
+ *  LES FORMULATIONS ANGLAISES SONT REPRISES D'AILLEURS DANS LE DÉPÔT, pas
+ *  réinventées : « Structure change », « Business valuation », « Budget
+ *  tracking », « Detailed balance sheet », « Letters and certificates » et
+ *  « Engagement letter » viennent d'AutomationTabs, « New project » et
+ *  « All Atlas » de OraHeroMobile, « Property forecast » de PrevisionnelMockup.
+ *  Le même module doit porter le même nom d'un bout à l'autre du site.
+ *
+ *  ⚠ CONTRAINTE DE LARGEUR : `.oa-qcard b` est en `nowrap` + `ellipsis`, un
+ *  titre trop long est COUPÉ sans avertissement. Les douze traductions sont
+ *  toutes plus courtes ou égales à leur original français (mesuré en
+ *  caractères), aucune ne rallonge la tuile. « Bilan développé et SIG » devient
+ *  « Detailed balance sheet » sans le SIG : le sous-titre dit déjà « how profit
+ *  forms », qui est précisément ce que les SIG décrivent. */
 const QUICK: {
-  title: string;
+  title: { fr: string; en: string };
   sub: { fr: string; en: string };
   tone: string;
   icon: "bank" | "swap" | "scale" | "pie" | "gauge" | "plus" | "arb" | "farm" | "penDoc" | "mission" | "bulb" | "globe";
 }[] = [
-  { title: "Prévisionnel immobilier", sub: { fr: "Dossier banque en 5 min", en: "Bank file in 5 min" }, tone: "emerald", icon: "bank" },
-  { title: "Changement de structure", sub: { fr: "Comparatif avant / après", en: "Before / after comparison" }, tone: "amber", icon: "swap" },
-  { title: "Évaluation d'entreprise", sub: { fr: "Cinq approches combinées", en: "Five combined approaches" }, tone: "rose", icon: "scale" },
-  { title: "Bilan développé et SIG", sub: { fr: "Le bilan et la formation du résultat", en: "The balance sheet and how profit forms" }, tone: "violet", icon: "pie" },
-  { title: "Suivi budgétaire", sub: { fr: "Réalisé contre budget", en: "Actual versus budget" }, tone: "blue", icon: "gauge" },
-  { title: "Arbitrages de fin d'année", sub: { fr: "Prime, dividendes, ou le bon équilibre", en: "Bonus, dividends, or the right balance" }, tone: "violet", icon: "arb" },
-  { title: "Prévisionnel agricole", sub: { fr: "Le plan d'exploitation, prêt pour la banque", en: "The farm plan, ready for the bank" }, tone: "emerald", icon: "farm" },
-  { title: "Courriers et attestations", sub: { fr: "CA et revenus lus dans le FEC", en: "Revenue and income read from the FEC" }, tone: "blue", icon: "penDoc" },
-  { title: "Lettre de mission", sub: { fr: "Le contrat chiffré depuis les vôtres", en: "The priced engagement letter, from yours" }, tone: "amber", icon: "mission" },
-  { title: "Revue d'opportunités", sub: { fr: "Aides et dispositifs 2026, chiffrés", en: "2026 schemes and grants, quantified" }, tone: "amber", icon: "bulb" },
-  { title: "Nouveau projet", sub: { fr: "Deal PE, audit, M&A...", en: "PE deal, audit, M&A..." }, tone: "blue", icon: "plus" },
-  { title: "Tous les Atlas", sub: { fr: "Liste de vos projets", en: "All your projects" }, tone: "violet", icon: "globe" },
+  { title: { fr: "Prévisionnel immobilier", en: "Property forecast" }, sub: { fr: "Dossier banque en 5 min", en: "Bank file in 5 min" }, tone: "emerald", icon: "bank" },
+  { title: { fr: "Changement de structure", en: "Structure change" }, sub: { fr: "Comparatif avant / après", en: "Before / after comparison" }, tone: "amber", icon: "swap" },
+  { title: { fr: "Évaluation d'entreprise", en: "Business valuation" }, sub: { fr: "Cinq approches combinées", en: "Five combined approaches" }, tone: "rose", icon: "scale" },
+  { title: { fr: "Bilan développé et SIG", en: "Detailed balance sheet" }, sub: { fr: "Le bilan et la formation du résultat", en: "The balance sheet and how profit forms" }, tone: "violet", icon: "pie" },
+  { title: { fr: "Suivi budgétaire", en: "Budget tracking" }, sub: { fr: "Réalisé contre budget", en: "Actual versus budget" }, tone: "blue", icon: "gauge" },
+  { title: { fr: "Arbitrages de fin d'année", en: "Year-end trade-offs" }, sub: { fr: "Prime, dividendes, ou le bon équilibre", en: "Bonus, dividends, or the right balance" }, tone: "violet", icon: "arb" },
+  { title: { fr: "Prévisionnel agricole", en: "Farm forecast" }, sub: { fr: "Le plan d'exploitation, prêt pour la banque", en: "The farm plan, ready for the bank" }, tone: "emerald", icon: "farm" },
+  { title: { fr: "Courriers et attestations", en: "Letters and certificates" }, sub: { fr: "CA et revenus lus dans le FEC", en: "Revenue and income read from the FEC" }, tone: "blue", icon: "penDoc" },
+  { title: { fr: "Lettre de mission", en: "Engagement letter" }, sub: { fr: "Le contrat chiffré depuis les vôtres", en: "The priced engagement letter, from yours" }, tone: "amber", icon: "mission" },
+  { title: { fr: "Revue d'opportunités", en: "Opportunity review" }, sub: { fr: "Aides et dispositifs 2026, chiffrés", en: "2026 schemes and grants, quantified" }, tone: "amber", icon: "bulb" },
+  { title: { fr: "Nouveau projet", en: "New project" }, sub: { fr: "Deal PE, audit, M&A...", en: "PE deal, audit, M&A..." }, tone: "blue", icon: "plus" },
+  { title: { fr: "Tous les Atlas", en: "All Atlas" }, sub: { fr: "Liste de vos projets", en: "All your projects" }, tone: "violet", icon: "globe" },
 ];
 
 const OA_CSS = `
@@ -543,10 +564,15 @@ export default function OraAppScene({ playing = true, cropScale, chips: chipMode
                     {QUICK.map((q) => {
                       const Ico = QUICK_ICON[q.icon];
                       return (
-                        <div className="oa-qcard" key={q.title}>
+                        /* Clé sur `title.en` et non sur le titre traduit : une
+                           clé React qui change avec la langue force le
+                           démontage puis le remontage des douze tuiles à
+                           chaque bascule FR/EN, au lieu d'une simple mise à
+                           jour de texte. */
+                        <div className="oa-qcard" key={q.title.en}>
                           <span className={`ic ${q.tone}`}><Ico /></span>
                           <div style={{ minWidth: 0 }}>
-                            <b>{q.title}</b>
+                            <b>{t(q.title)}</b>
                             <span>{t(q.sub)}</span>
                           </div>
                           <span className="arw"><IcoArrow s={15} /></span>

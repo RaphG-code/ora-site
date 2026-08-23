@@ -1,5 +1,6 @@
 import { ArrowRight, Bell, ExternalLink, FileSpreadsheet, FileText, Gauge, Globe, Home, Landmark, MessageCircle, PieChart, Play, Plus, Repeat, Scale, Sparkles } from "lucide-react";
 import { useEnterOnScroll } from "@/lib/useEnterOnScroll";
+import { useLang } from "@/lib/i18n";
 
 /**
  * OraHomeMockup — réplique de l'écran d'ACCUEIL du vrai logiciel, v3 (client
@@ -26,15 +27,24 @@ import { useEnterOnScroll } from "@/lib/useEnterOnScroll";
  * montre huit sur trois colonnes, et c'est cette densité qui fait qu'on
  * reconnaît un logiciel et pas une illustration.
  * Aucun libellé n'est inventé : tous viennent de la capture. */
+/* ⚠ TRADUITS LE 2026-08-19, en même temps que ceux d'OraAppScene (client :
+ *  « traduis les modules en anglais pour la version anglaise »). Cette maquette
+ *  n'était PAS visée par la demande — elle est bien plus petite — mais elle est
+ *  montée dans le MUR du hero (OraHeroDemo), donc elle aussi « tout en haut »,
+ *  et elle porte les mêmes intitulés. Les traduire d'un côté seulement aurait
+ *  laissé les deux répliques du même logiciel se contredire dans un même écran.
+ *  Mêmes formulations qu'OraAppScene, au mot près : un module porte le même nom
+ *  partout sur le site. */
 const MODULES = [
-  { title: "Prévisionnel immobilier", sub: "Dossier banque en 5 min", icon: Landmark, iconCls: "bg-emerald-50 text-emerald-600" },
-  { title: "Changement de structure", sub: "Comparatif avant / après", icon: Repeat, iconCls: "bg-amber-50 text-amber-500" },
-  { title: "Évaluation d'entreprise", sub: "Cinq approches combinées", icon: Scale, iconCls: "bg-rose-50 text-rose-500" },
-  { title: "Bilan développé", sub: "Le bilan en un coup d'œil", icon: PieChart, iconCls: "bg-violet-50 text-violet-600" },
-  { title: "Suivi budgétaire", sub: "Réalisé contre budget", icon: Gauge, iconCls: "bg-blue-50 text-blue-600" },
-  { title: "Nouveau projet", sub: "Deal PE, audit, M&A...", icon: Plus, iconCls: "bg-sky-50 text-sky-600" },
-  { title: "Tous les Atlas", sub: "Liste de vos projets", icon: Globe, iconCls: "bg-violet-50 text-violet-600" },
-  { title: "Ora Engineering", sub: "Automatisation sur-mesure", icon: Sparkles, iconCls: "bg-blue-50 text-blue-600" },
+  { title: { fr: "Prévisionnel immobilier", en: "Property forecast" }, sub: { fr: "Dossier banque en 5 min", en: "Bank file in 5 min" }, icon: Landmark, iconCls: "bg-emerald-50 text-emerald-600" },
+  { title: { fr: "Changement de structure", en: "Structure change" }, sub: { fr: "Comparatif avant / après", en: "Before / after comparison" }, icon: Repeat, iconCls: "bg-amber-50 text-amber-500" },
+  { title: { fr: "Évaluation d'entreprise", en: "Business valuation" }, sub: { fr: "Cinq approches combinées", en: "Five combined approaches" }, icon: Scale, iconCls: "bg-rose-50 text-rose-500" },
+  { title: { fr: "Bilan développé", en: "Detailed balance sheet" }, sub: { fr: "Le bilan en un coup d'œil", en: "The balance sheet at a glance" }, icon: PieChart, iconCls: "bg-violet-50 text-violet-600" },
+  { title: { fr: "Suivi budgétaire", en: "Budget tracking" }, sub: { fr: "Réalisé contre budget", en: "Actual versus budget" }, icon: Gauge, iconCls: "bg-blue-50 text-blue-600" },
+  { title: { fr: "Nouveau projet", en: "New project" }, sub: { fr: "Deal PE, audit, M&A...", en: "PE deal, audit, M&A..." }, icon: Plus, iconCls: "bg-sky-50 text-sky-600" },
+  { title: { fr: "Tous les Atlas", en: "All Atlas" }, sub: { fr: "Liste de vos projets", en: "Your projects" }, icon: Globe, iconCls: "bg-violet-50 text-violet-600" },
+  // « Ora Engineering » est un nom de produit : il ne se traduit pas.
+  { title: { fr: "Ora Engineering", en: "Ora Engineering" }, sub: { fr: "Automatisation sur-mesure", en: "Custom automation" }, icon: Sparkles, iconCls: "bg-blue-50 text-blue-600" },
 ];
 
 /** `plain` : SANS le cadre propre (coins, liseré, ombre) ni l'animation
@@ -46,6 +56,7 @@ const MODULES = [
  *  fonctionner (voir useEnterOnScroll). */
 export default function OraHomeMockup({ plain = false, still = false }: { plain?: boolean; still?: boolean }) {
   const { ref, hidden, armed } = useEnterOnScroll<HTMLDivElement>(still);
+  const { t } = useLang();
 
   return (
     <div ref={ref} className="relative w-full lg:h-full">
@@ -155,7 +166,9 @@ export default function OraHomeMockup({ plain = false, still = false }: { plain?
               const Icon = m.icon;
               return (
                 <div
-                  key={m.title}
+                  /* Clé sur `title.en` : une clé qui change avec la langue
+                     ferait remonter les huit tuiles à chaque bascule FR/EN. */
+                  key={m.title.en}
                   // Gabarit resserré depuis le passage à TROIS colonnes : à
                   // deux, chaque tuile avait la moitié de la largeur, elle en a
                   // maintenant le tiers. Sans ce resserrement le libellé se
@@ -167,9 +180,9 @@ export default function OraHomeMockup({ plain = false, still = false }: { plain?
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="font-inter font-semibold text-[8.5px] leading-tight text-[#111827] truncate">
-                      {m.title}
+                      {t(m.title)}
                     </div>
-                    <div className="mt-px font-inter text-[7.5px] leading-tight text-gray-400 truncate">{m.sub}</div>
+                    <div className="mt-px font-inter text-[7.5px] leading-tight text-gray-400 truncate">{t(m.sub)}</div>
                   </div>
                   <ArrowRight className="h-2.5 w-2.5 shrink-0 text-gray-300" />
                 </div>

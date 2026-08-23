@@ -252,8 +252,17 @@ colonnes, c'est la PROPORTION d'une entrée : une tuile franche, le bénéfice s
 une ou deux lignes à côté d'elle, la catégorie en dessous, et de l'air. Deux
 entrées de front sur 390 px détruisent cette proportion — 165 px par entrée,
 dont 62 de tuile, laissaient 91 px au titre, soit CINQ lignes de trois mots.
-Le bloc passe donc à UNE colonne sous `md`, tuile à 84 px, titre à 15 px sur
-250 px : la proportion du bureau, à l'échelle du téléphone.
+Le bloc passe donc à UNE colonne sous `md` : la proportion du bureau, à
+l'échelle du téléphone.
+⚠ MESURES REPRISES APRÈS LA FUSION DE LA PR nº 40 (2026-08-23). Cette
+correction avait été écrite contre l'ancien bloc, noir, à tuiles de dégradé et
+icône. `main` a refondu la section entre-temps — fond blanc, vignettes muettes
+d'`AtlasSlideVisual`, titres en Instrument Sans — et sa version répondait DÉJÀ
+à la demande : `grid` sans `grid-cols` de base, donc une colonne sous `md`.
+C'est elle qui est en place, et ses valeurs font foi : entrée de 342 px à
+390 px d'écran, vignette de 104 px, titre de 18 px sur 218 px, deux lignes.
+Le raisonnement ci-dessus reste la RÈGLE ; les chiffres de l'ancien correctif
+(tuile 84, titre 15 px) ne décrivent plus rien dans le code.
 La règle générale : quand une case de grille est déjà un couple
 image + texte, c'est CE couple qu'il faut garder côte à côte ; empiler deux
 cases de front par-dessus revient à diviser par deux la largeur du texte, et

@@ -1359,7 +1359,23 @@ const App = () => {
           en commençant ici. Les cartes blanches de la grille y gagnent en plus
           un fond dont elles se détachent, ce qui était une demande du
           2026-08-07 réglée à l'époque en teintant le fond en bleu. */}
-      <section id="features" className="relative pt-14 md:pt-28 pb-0 px-5 md:px-12 bg-[#fcfbf7] dark:bg-black md:dark:bg-background">
+      {/* ⚠ BLANC PUR, ET C'EST UN ÉCART À LA RÈGLE D'ALTERNANCE (client
+          2026-08-21 : « put the background of this part blank as it was
+          before »). La section portait `#fcfbf7`, le blanc cassé chaud de la
+          charte, et c'était son tour dans l'alternance de CLAUDE.md.
+          Ce qui a été confondu, et qu'il faut garder en tête : les CARTES de
+          cette grille sont blanches depuis toujours ; c'est le fond DERRIÈRE
+          elles qui était crème. À deux blancs si proches, l'écart ne se voyait
+          qu'aux bords des cartes, ce qui donnait l'impression d'un liseré sale
+          plutôt que d'une alternance.
+          Conséquence à surveiller : la section qui suit ouvre elle aussi sur du
+          clair, l'alternance saute donc sur ce couple. Si le rythme des fonds
+          est repris un jour, c'est ici qu'il faudra rétablir `#fcfbf7`. */}
+      {/* FUSION 2026-08-23 : le FOND vient de main (décision client du 21/08),
+          le RYTHME DE TÉLÉPHONE de cette branche (pt-20 → pt-14, px-6 → px-5).
+          Les deux portent sur des propriétés différentes, aucune n'annule
+          l'autre, et les valeurs `md:` sont celles de main au pixel. */}
+      <section id="features" className="relative pt-14 md:pt-28 pb-0 px-5 md:px-12 bg-white dark:bg-black md:dark:bg-background">
         {/* Ambient blue/pink tints — pure radial gradients, NO blur filter
             (same perf rule as the experience section). The section is very
             tall, so blobs are sprinkled along it. Every ellipse fades to
@@ -1621,26 +1637,34 @@ const App = () => {
           Le blanc cassé #fcfbf7 tenait ici son tour d'alternance, mais c'est le
           dernier appel du site : le bouton bleu y gagne le fond le plus neutre
           possible, et la bande blanche le détache de la section qui précède. */}
-      <section className="relative px-5 md:px-12 pt-12 md:pt-8 pb-24 md:pb-56 bg-white dark:bg-black md:dark:bg-black">
+      {/* ⚠ LA PHRASE A ÉTÉ RETIRÉE (client 2026-08-19 : « remove the phrase
+          Une demi-heure, sur vos propres fichiers… »). Elle disait, en deux
+          encres : « Une demi-heure, sur vos propres fichiers. On regarde ce
+          qui se répète chez vous, et on vous dit ce qu'Ora reprend. »
+          ⚠ ET CELA REMET LE BLOC DANS L'ÉTAT QUE L'AUDIT DU 2026-08-15
+          AVAIT SIGNALÉ : un bouton nu au milieu d'une section vide, en
+          dernier appel du site. C'était la raison d'être de la phrase.
+          Laissé ainsi À LA DEMANDE EXPRESSE DU CLIENT ; si le vide gêne un
+          jour, la phrase est ici, mot pour mot, prête à revenir.
+          Le pas du haut passe de pt-16/pt-8 à pt-24/pt-20 : sans titre,
+          l'ancien blanc laissait le bouton coller au bord de section.
+          ⚠ FUSION 2026-08-23 : cette branche avait REMIS EN FORME cette phrase
+          pour le téléphone (seconde encre détachée à 15 px). La suppression de
+          main est plus récente ET c'est une demande explicite du client : elle
+          l'emporte, et la mise en forme part avec la phrase. Le rythme
+          vertical est celui de main, calibré pour un bloc SANS titre — celui
+          de cette branche (pt-12/pt-8) l'était pour un bloc qui en avait un.
+          Ce qui survit de la branche : la gouttière de téléphone (px-5) et le
+          bouton réduit sous md. Un appel de 48 px de haut en 18 px de corps
+          sur une colonne de 350, c'est exactement ce que le client a renvoyé
+          deux fois (« the buttons are way too big », 20/08 ; « bien plus petit
+          et discret », 23/08). Les valeurs `md:` sont celles de main au
+          pixel. */}
+      <section className="relative px-5 md:px-12 pt-24 md:pt-20 pb-44 md:pb-56 bg-white dark:bg-black md:dark:bg-black">
         <div className="mx-auto max-w-[46rem] text-center">
-          {/* MÊME RÈGLE QUE PARTOUT AILLEURS sur téléphone (2026-08-22) : la
-              seconde encre passe à la ligne, dans le corps du texte courant.
-              Les deux encres à 26 px faisaient cinq lignes centrées où l'appel
-              — c'est le DERNIER du site — se noyait dans son propre chapô. */}
-          <h2 className="font-instrument font-normal text-[1.45rem] md:text-[clamp(1.6rem,4vw,3rem)] leading-[1.12] tracking-[-0.03em]">
-            <span className="text-[#111827] dark:text-white">
-              {t({ fr: "Une demi-heure, sur vos propres fichiers.", en: "Half an hour, on your own files." })}
-            </span>{" "}
-            <span className="text-[#7a8496] max-md:mx-auto max-md:mt-3 max-md:block max-md:max-w-[34ch] max-md:font-inter max-md:text-[0.95rem] max-md:leading-[1.55] max-md:tracking-normal dark:text-gray-500">
-              {t({
-                fr: "On regarde ce qui se répète chez vous, et on vous dit ce qu'Ora reprend.",
-                en: "We look at what repeats in your work, and tell you what Ora takes over.",
-              })}
-            </span>
-          </h2>
           <button
             onClick={openBooking}
-            className="group mt-7 inline-flex items-center gap-2.5 px-8 py-4 rounded-full text-[16px] font-inter font-semibold text-white transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 bg-[#3b82f6] hover:bg-[#2563eb] shadow-[0_8px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.55)] md:mt-9 md:gap-3 md:px-12 md:py-6 md:text-xl"
+            className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-full text-[16px] font-inter font-semibold text-white transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 bg-[#3b82f6] hover:bg-[#2563eb] shadow-[0_8px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.55)] md:gap-3 md:px-12 md:py-6 md:text-xl"
           >
             {t({ fr: "Réserver mon appel", en: "Book my call" })}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-150" />

@@ -1320,17 +1320,26 @@ export default function UseCasesBento({ openBooking }: { openBooking?: () => voi
       // tombent tous deux sur rgb(194,·,·) au-dessus du blanc) : ce qui change
       // est la SATURATION, pas la masse. Places et rayons restent au chiffre
       // près, comme à chaque passage sur cette carte.
-      // ⚠ PLUS DE NAPPE (client 2026-08-15 : « pour ces deux encadrés il faut que
-      // le background soit blanc »). Les trois voiles bleus — l'ellipse haute à
-      // hauteur de barre de fenêtre, le halo montant du bas-gauche et la pointe
-      // bas-droite — ont été réglés cinq fois entre le 2026-08-06 et le
-      // 2026-08-07 (« l'ombre bleue ne doit pas couper le texte », « mets moins
-      // d'ombre bleu », puis le passage au bleu de l'anneau de particules). Ils
-      // sont retirés d'un bloc, pas atténués : la demande porte sur le FOND, pas
-      // sur la dose. Leurs valeurs exactes restent dans l'historique git de ce
-      // fichier, et RING_BLUE sert encore aux ombres de maquette.
-      // La carte tient désormais par son liseré, son ombre et la fenêtre du
-      // logiciel qu'elle porte.
+      // ══ ⚠ CARTE BLANCHE, ET C'EST LE TROISIÈME ALLER-RETOUR ═══════════════
+      // Cette carte n'a plus de `wash`. Historique, parce qu'il compte pour
+      // qui reprendra ce fichier :
+      //   · 06 → 07 août : trois voiles bleus, réglés CINQ fois (« l'ombre
+      //     bleue ne doit pas couper le texte », « mets moins d'ombre bleu »,
+      //     puis passage au bleu de l'anneau de particules) ;
+      //   · 15 août : retirés d'un bloc (« pour ces deux encadrés il faut que
+      //     le background soit blanc ») ;
+      //   · 19 août : restaurés au chiffre près depuis le commit 2c3e9c4
+      //     (« remets le bleu de background qu'il y avait avant ») ;
+      //   · 21 août : retirés de nouveau (« put the background of this part
+      //     into white »).
+      // ⚠ NE PAS LES REJOUER DE MÉMOIRE si la demande revient. Les valeurs
+      // exactes des trois nappes — ellipse haute à hauteur de barre de fenêtre,
+      // halo montant du bas-gauche, pointe bas-droite — sont dans l'historique
+      // git de ce fichier, au commit 2c3e9c4, et c'est de là qu'il faut les
+      // reprendre. Les redessiner à l'estime, c'est rouvrir les cinq passes de
+      // réglage d'août.
+      // La carte tient donc par son liseré, son ombre et la fenêtre du logiciel
+      // qu'elle porte. `RING_BLUE` sert encore aux ombres de maquette.
       // Corps et largeur propres à cette carte, mais GRAISSE COMMUNE : la
       // phrase est repassée en 400 comme tous les autres titres de la grille
       // (client 2026-08-07, « la même police que les autres titres »), après

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
   FileOutput,
@@ -19,11 +19,7 @@ import { useLang } from "@/lib/i18n";
 import { MockupHome, MockupManager } from "./AtlasMockups";
 import InViewVideo, { VideoWithScrubber } from "./InViewVideo";
 import ScaleToFit from "./ScaleToFit";
-// ⚠ `AtlasSlideVisual` n'est plus MONTÉ ici depuis que la grille a remplacé le
-// carrousel (2026-08-19), mais son type l'est : le champ `visual` de USE_CASES
-// le garde, et c'est ce qui permettra de remonter les six scènes sans les
-// réécrire. Le composant lui-même reste intact dans AtlasSlideVisual.tsx.
-import { type AtlasVisual } from "./AtlasSlideVisual";
+import AtlasSlideVisual, { type AtlasVisual } from "./AtlasSlideVisual";
 import Typewriter from "./Typewriter";
 
 /**
@@ -194,14 +190,73 @@ const ATLAS_LINES: { fr: string; en: string }[] = [
   },
 ];
 
-/** La rangée qui ferme la scène d'ouverture, sous l'horizon. Cinq capacités,
- *  dites en une ligne chacune : c'est un ourlet, pas un argumentaire. */
-const SKY_FOOT: { icon: LucideIcon; label: { fr: string; en: string } }[] = [
-  { icon: Search, label: { fr: "Cherche dans vos dossiers", en: "Searches your own files" } },
-  { icon: Waypoints, label: { fr: "Relie chaque fichier à ses sources", en: "Links every file to its sources" } },
-  { icon: ListChecks, label: { fr: "Montre ce qui reste à valider", en: "Shows what is left to validate" } },
-  { icon: History, label: { fr: "Garde le journal de chaque geste", en: "Keeps a log of every action" } },
-  { icon: ShieldCheck, label: { fr: "Ne sort jamais de chez vous", en: "Never leaves your machines" } },
+/**
+ * LES CINQ CAPACITÉS D'ATLAS.
+ *
+ * ⚠ ELLES ONT CHANGÉ DE PLACE ET DE FORME le 2026-08-20. C'était `SKY_FOOT` :
+ * une rangée horizontale de cinq cellules, posée en ourlet sous l'horizon de la
+ * planète, une ligne chacune, sans description. Elles alimentent maintenant la
+ * LISTE du bloc « Atlas en clair » (patron repris de la page Signals d'attio,
+ * fournie par le client), et l'ourlet a été retiré : garder les deux aurait
+ * fait dire exactement la même chose à un écran d'intervalle.
+ *
+ * Les cinq libellés sont INCHANGÉS, au mot près — ils sont validés depuis le
+ * 2026-08-15 et l'un d'eux porte le différenciateur du produit. Ce qui est
+ * nouveau, c'est la ligne d'appui : le format attio donne à chaque entrée un
+ * titre court et deux lignes sous lui, et cinq titres nus feraient une colonne
+ * squelettique face à la moitié droite restée vide.
+ *
+ * ⚠ AUCUNE DES DESCRIPTIONS N'INVENTE QUOI QUE CE SOIT. Chacune reformule ce
+ * que le site dit déjà ailleurs : les six usages de la grille pour les quatre
+ * premières, la section confidentialité pour la dernière (« Traitement 100 %
+ * local, vos données restent chez vous »). Pas un chiffre, pas un nom de
+ * client, pas une promesse nouvelle.
+ */
+const ATLAS_CAPS: {
+  icon: LucideIcon;
+  label: { fr: string; en: string };
+  desc: { fr: string; en: string };
+}[] = [
+  {
+    icon: Search,
+    label: { fr: "Cherche dans vos dossiers", en: "Searches your own files" },
+    desc: {
+      fr: "Posez la question en français. Atlas ouvre vos fichiers, pas un moteur de recherche.",
+      en: "Ask in plain words. Atlas opens your files, not a search engine.",
+    },
+  },
+  {
+    icon: Waypoints,
+    label: { fr: "Relie chaque fichier à ses sources", en: "Links every file to its sources" },
+    desc: {
+      fr: "Chaque chiffre garde le chemin qui y mène, du livrable jusqu'à la pièce d'origine.",
+      en: "Every figure keeps the path that leads to it, from the deliverable to the source document.",
+    },
+  },
+  {
+    icon: ListChecks,
+    label: { fr: "Montre ce qui reste à valider", en: "Shows what is left to validate" },
+    desc: {
+      fr: "Ce qui est bouclé, ce qui attend, ce qui bloque, sans faire le tour des dossiers.",
+      en: "What is closed, what is waiting, what is stuck, without touring the folders.",
+    },
+  },
+  {
+    icon: History,
+    label: { fr: "Garde le journal de chaque geste", en: "Keeps a log of every action" },
+    desc: {
+      fr: "Qui a lancé quoi, quand, et sur quelle version. Le même dossier se rejoue à l'identique.",
+      en: "Who ran what, when, and on which version. The same file replays identically.",
+    },
+  },
+  {
+    icon: ShieldCheck,
+    label: { fr: "Ne sort jamais de chez vous", en: "Never leaves your machines" },
+    desc: {
+      fr: "Traitement local. Vos fichiers restent sur vos postes, y compris pendant l'analyse.",
+      en: "Local processing. Your files stay on your machines, including during analysis.",
+    },
+  },
 ];
 
 /** ── CE QU'ON PEUT DEMANDER À ATLAS ────────────────────────────────────────
@@ -378,53 +433,36 @@ const USE_CASES: UseCase[] = [
 ];
 
 /**
- * LE GRAIN DES TUILES. Un `feTurbulence` rendu une fois en data-URI, répété en
- * fond : c'est ce qui donne aux tuiles de la référence OpenAI leur matière
- * diffuse plutôt qu'un aplat de dégradé propre.
+ * ⚠ INTERRUPTEUR TEMPORAIRE : LA COLONNE RÉSERVÉE DU BLOC « ATLAS EN CLAIR ».
  *
- * Pourquoi un data-URI et pas un `<svg>` avec un `<filter>` posé sur l'élément :
- * un filtre SVG appliqué à un nœud du DOM est recalculé par le navigateur à
- * chaque repeinture de ce nœud. Six tuiles filtrées dans une section qui défile
- * au-dessus d'une pile de cartes épinglées, c'était le poste de dessin le plus
- * cher de la page. En image de fond, le bruit est rastérisé UNE fois et
- * simplement recopié.
+ * `true` en développement, `false` dans tout build. Client 2026-08-21 : « fais
+ * en sorte que cette partie prenne la largeur pour la version qu'on pousse
+ * maintenant, mais garde-la comme elle est actuellement pour le localhost ».
  *
- * ⚠ Les `#` doivent rester encodés en `%23` dans l'URI (`url(%23n)` et non
- * `url(#n)`) : un `#` nu ouvre un fragment d'URL et le filtre n'est jamais
- * trouvé, la tuile se rend alors en dégradé nu, sans erreur en console.
+ * Ce qu'il commande :
+ *   · en DEV  — deux colonnes, la droite vide, filet de séparation. C'est
+ *     l'emplacement réservé au visuel à venir, gardé visible pour travailler ;
+ *   · en PROD — une seule colonne pleine largeur, la liste des capacités en
+ *     grille de deux ou trois colonnes. Aucun visiteur ne voit de demi-page
+ *     vide.
+ *
+ * ⚠ CE QUE CELA COÛTE, ET QU'IL FAUT AVOIR EN TÊTE : ce qu'on voit sous
+ * `npm run dev` n'est PAS ce qui est déployé. La mise en page de production ne
+ * peut être vérifiée qu'avec `npm run build && npm run preview`. Un défaut qui
+ * n'existerait que dans la branche production traverserait tout le
+ * développement sans être vu.
+ *
+ * ⚠ ET CE N'EST PAS UN RÉGLAGE DURABLE. Le jour où le visuel de droite existe,
+ * il faut SUPPRIMER cette constante et ses deux branches, pas en ajouter une
+ * troisième. Trois chemins de rendu pour un même bloc, c'est le début d'une
+ * section que plus personne n'ose toucher.
  */
-const NOISE =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23n)'/%3E%3C/svg%3E\")";
+const RESERVE_VISUAL = import.meta.env.DEV;
 
-/**
- * LES SIX FONDS DE TUILE, un par usage, dans l'ordre de USE_CASES.
- *
- * Chacun est en DEUX couches : un halo blanc en haut à gauche, puis le dégradé
- * de la charte. Le halo est ce qui fait la lumière douce de la référence — sans
- * lui un dégradé linéaire se lit comme un aplat de PowerPoint.
- *
- * ⚠ AUCUNE TEINTE HORS CHARTE ICI. La salle de presse OpenAI enchaîne des
- * roses, des oranges et des verts ; reprendre ce nuancier casserait la règle
- * « un seul bleu » de CLAUDE.md et ferait six couleurs de marque là où le site
- * en a deux. Les six tuiles se distinguent donc par la COMBINAISON, le SENS et
- * l'ANGLE du dégradé, pas par la teinte : bleu (#3b82f6), bleu foncé (#2563eb)
- * et sarcelle (#0d9488), rien d'autre.
- *
- * ⚠ ET AUCUNE NE FINIT SUR UNE ENCRE SOMBRE. Deux d'entre elles descendaient
- * vers #0f172a (le fond de section alterné de la charte). Mesuré à l'écran :
- * posées sur le NOIR de cette section, leur moitié basse se confondait avec le
- * fond et la tuile perdait deux de ses bords — elle ne se lisait plus comme un
- * objet mais comme une tache éclairée par le haut. Sur fond noir, une tuile
- * doit rester lumineuse d'un bout à l'autre.
- */
-const TILE_ART = [
-  "radial-gradient(120% 95% at 22% 18%, rgba(255,255,255,0.42), transparent 62%), linear-gradient(145deg, #3b82f6, #0d9488)",
-  "radial-gradient(120% 95% at 78% 20%, rgba(255,255,255,0.38), transparent 60%), linear-gradient(200deg, #0d9488, #2563eb)",
-  "radial-gradient(130% 100% at 30% 82%, rgba(255,255,255,0.34), transparent 64%), linear-gradient(125deg, #2563eb, #3b82f6)",
-  "radial-gradient(118% 92% at 72% 80%, rgba(255,255,255,0.40), transparent 60%), linear-gradient(20deg, #0d9488, #3b82f6)",
-  "radial-gradient(125% 95% at 75% 78%, rgba(255,255,255,0.36), transparent 62%), linear-gradient(135deg, #3b82f6, #2563eb)",
-  "radial-gradient(120% 95% at 26% 24%, rgba(255,255,255,0.40), transparent 60%), linear-gradient(175deg, #2563eb, #0d9488)",
-];
+/* `NOISE` et `TILE_ART` vivaient ici : le grain en data-URI et les six dégradés
+   qui habillaient les tuiles abstraites de la première version de la grille.
+   Ils sont partis le 2026-08-19 avec elles, les six vraies scènes
+   (AtlasSlideVisual) ayant repris leur place. */
 
 type TabId = "galaxy" | "dashboard" | "manager";
 
@@ -468,6 +506,37 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
   const planetRef = useRef<HTMLDivElement>(null);
   const skyTypeRef = useRef<HTMLDivElement>(null);
   const skyLineRef = useRef<HTMLDivElement>(null);
+
+  /* ── LE BLANC MONTE SUR LE NOIR ────────────────────────────────────────────
+   * Client 2026-08-20 : « quand on est tout en bas du fond noir et qu'on voit
+   * le fond blanc arriver en défilant, fais la même animation de fond blanc qui
+   * monte vers nous, plutôt que le fond noir qui disparaît simplement ».
+   *
+   * Avant : la section blanche défilait comme n'importe quelle section, le noir
+   * sortait par le haut, et la bascule se lisait comme une coupure franche.
+   * Maintenant : la feuille blanche REMONTE de 88 px de plus que le défilement
+   * pendant qu'elle entre, arrondie et ombrée par le haut. Elle passe donc
+   * PAR-DESSUS le noir au lieu de le suivre.
+   *
+   * ⚠ PARALLAXE ET NON ÉPINGLAGE, et c'est un choix contraint. Le vrai rideau
+   * (`position:sticky` sur le bloc noir, la feuille blanche qui glisse dessus)
+   * demanderait d'épingler la section vidéo — 820 px de haut, donc plus haute
+   * que beaucoup de fenêtres de portable, où un élément sticky se comporte tout
+   * autrement. Et ce fichier porte DÉJÀ un épinglage, celui de la scène de la
+   * planète, dont le pavé plus bas documente à quel point il est fragile. Deux
+   * mécanismes d'épinglage dans un même composant, c'est la panne assurée.
+   * La parallaxe donne le même mouvement et ne dépend d'aucune hauteur.
+   *
+   * `offset` : de « le haut de la section touche le bas de l'écran » à « le
+   * haut de la section atteint le milieu de l'écran ». Le mouvement est donc
+   * terminé quand la feuille est bien installée, il ne traîne pas ensuite.
+   */
+  const riseRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: riseProgress } = useScroll({
+    target: riseRef,
+    offset: ["start end", "start center"],
+  });
+  const riseY = useTransform(riseProgress, [0, 1], [88, 0]);
 
   useEffect(() => {
     const wrap = skyWrapRef.current;
@@ -594,7 +663,7 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
         data-nav-shy
         className="relative z-[20] bg-black"
       >
-        <div ref={skyWrapRef} className="relative h-[145vh] md:h-[200vh]">
+        <div ref={skyWrapRef} className="relative h-[200vh]">
           <div className="at-sky sticky top-0 h-screen">
             <div aria-hidden className="at-lines" />
 
@@ -640,51 +709,19 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
               style={{ background: "linear-gradient(to bottom, transparent, #000)" }}
             />
 
-            {/* ── LA RANGÉE DE PIED, reprise de la capture attio ─────────────
-                Client 2026-08-15 : « qu'on voie qu'il y a des écritures juste
-                en dessous ». C'est la fonction exacte de cette bande dans la
-                référence : elle borde l'horizon par le bas et dit au lecteur
-                que la page continue. Elle est POSÉE SUR LE CORPS NOIR de la
-                planète, ce qui n'est pas un hasard — c'est la seule surface
-                vraiment noire de la scène, donc la seule où un texte blanc
-                tienne sans halo derrière lui.
-                Les filets verticaux ne séparent que sur grand écran : à trois
-                colonnes sur téléphone ils redécouperaient des cellules déjà
-                étroites. Les deux dernières entrées y sont d'ailleurs
-                masquées, faute de largeur pour cinq libellés. */}
-            <div
-              className="absolute inset-x-0 bottom-0 z-10 border-t border-white/[0.13]"
-              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.55))" }}
-            >
-              <div className="grid grid-cols-2 md:grid-cols-5">
-                {SKY_FOOT.map((f, i) => {
-                  const Icon = f.icon;
-                  return (
-                    <div
-                      key={f.label.en}
-                      /* ⚠ LES CINQ SONT VISIBLES SUR TÉLÉPHONE (audit du
-                         2026-08-15). Les deux dernières étaient masquées sous
-                         md « faute de largeur », et l'une d'elles est « Ne sort
-                         jamais de chez vous » : on retirait donc au visiteur
-                         mobile l'argument de confidentialité, qui est le
-                         différenciateur du produit. Une grille 2 colonnes sur
-                         téléphone les loge toutes, et le filet passe de vertical
-                         à horizontal pour séparer les rangées. */
-                      className={`flex flex-col gap-2 px-3 py-3 md:gap-3 md:px-6 md:py-6 ${
-                        i > 1 ? "border-t border-white/[0.13] md:border-t-0" : ""
-                      } ${i % 2 === 1 ? "border-l border-white/[0.13] md:border-l" : ""} ${
-                        i > 0 ? "md:border-l md:border-white/[0.13]" : ""
-                      }`}
-                    >
-                      <Icon className="h-4 w-4 text-white/55 md:h-[18px] md:w-[18px]" strokeWidth={1.6} />
-                      <span className="font-inter text-[11.5px] leading-snug text-white/55 md:text-[13px]">
-                        {t(f.label)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* ⚠ LA RANGÉE DE PIED A ÉTÉ RETIRÉE le 2026-08-20. C'était un
+                ourlet de cinq cellules posé sur le corps noir de la planète,
+                repris de la capture attio du 2026-08-15 (« qu'on voie qu'il y
+                a des écritures juste en dessous »). Les cinq capacités qu'elle
+                portait vivent maintenant dans le bloc « Atlas en clair » juste
+                sous cette section, en liste et avec une ligne d'appui chacune
+                (voir ATLAS_CAPS). Les garder aux deux endroits aurait fait
+                lire la même chose deux fois à un écran d'intervalle.
+                Ce que l'ourlet faisait en plus, et qu'il ne faut pas perdre :
+                il DISAIT QUE LA PAGE CONTINUE sous l'horizon. C'est désormais
+                le bloc suivant qui s'en charge, en commençant haut et clair.
+                Le dégradé de fondu vers le noir, juste au-dessus, reste : il
+                appartient à l'horizon, pas à la rangée. */}
 
             <div ref={skyTypeRef} className="relative z-10 px-6 pt-[16vh] text-center md:px-12 md:pt-[19vh]">
               {/* LA PETITE ÉTOILE FILANTE EST REVENUE (client, même passe :
@@ -747,6 +784,180 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
         </div>
       </section>
 
+      {/* ══ ATLAS EN CLAIR, PATRON ATTIO ═══════════════════════════════════
+          Client 2026-08-20, capture de la page Signals d'attio à l'appui :
+          « pour cette partie, utilise un type de layout comme ça. N'essaie pas
+          de répliquer leur animation à droite. Laisse un espace blanc, on verra
+          ce qu'on met dedans. »
+
+          CE QUI EST REPRIS DE LA RÉFÉRENCE, et rien d'autre :
+            · la page coupée en DEUX MOITIÉS par un filet vertical, le propos à
+              gauche, la scène à droite ;
+            · la pastille de section au-dessus du titre ;
+            · le titre en DEUX ENCRES, la seconde phrase en gris — c'est déjà la
+              grammaire de titre du site, elle tombe juste ;
+            · sous le bouton, une LISTE d'entrées séparées par des filets, titre
+              court et une ligne d'appui.
+          Ce qui n'est PAS repris : l'animation de droite, sur consigne. La
+          moitié droite est laissée VIDE, en noir, et c'est un emplacement
+          réservé, pas un oubli — voir le pavé qui la marque plus bas.
+
+          ⚠ ELLE EST VIDE MAIS ELLE OCCUPE LA PLACE. Le filet vertical et la
+          hauteur minimale sont là pour que la composition à deux colonnes se
+          lise DÈS MAINTENANT : sans eux, la colonne de gauche s'étalerait sur
+          toute la largeur et il faudrait tout recaler le jour où le visuel
+          arrive. Sur téléphone, la moitié droite disparaît entièrement — une
+          zone vide de 500 px de haut sur un écran de portable, c'est un bug aux
+          yeux du visiteur, pas une réserve.
+
+          Le fond reste NOIR, dans la continuité de la scène de la planète
+          au-dessus et de la vidéo en dessous : les trois blocs se lisent comme
+          une seule surface depuis le 2026-08-15. */}
+      <section
+        data-nav-dark
+        data-nav-shy
+        className="relative z-[20] bg-black"
+      >
+        {/* ══ ⚠ DEUX MISES EN PAGE, SELON QU'ON EST EN DEV OU EN PRODUCTION ══
+            Client 2026-08-21 : « fais en sorte que cette partie prenne la
+            largeur pour la version qu'on pousse maintenant, mais garde-la comme
+            elle est actuellement pour le localhost ».
+
+            La raison est bonne : la moitié droite est un EMPLACEMENT RÉSERVÉ
+            pour un visuel qui n'existe pas encore. On veut continuer à le voir
+            en travaillant, et ne pas exposer une demi-page vide aux visiteurs.
+
+            ⚠ MAIS C'EST UNE DIVERGENCE DEV / PROD, ET IL FAUT LA TRAITER COMME
+            TELLE. Ce qu'on voit en local n'est PAS ce qui est déployé : la mise
+            en page pleine largeur ne peut donc être vérifiée qu'en construisant
+            (`npm run build && npm run preview`), jamais avec `npm run dev`. Un
+            défaut qui n'existerait que dans la branche production passerait
+            inaperçu pendant tout le développement.
+            C'est un ARRANGEMENT TEMPORAIRE. Le jour où le visuel de droite
+            existe, il faut supprimer `RESERVE_VISUAL` et ses deux branches, pas
+            en ajouter une troisième.
+
+            `import.meta.env.DEV` vaut true sous `npm run dev` et false dans
+            tout ce qui sort de `npm run build` — donc aussi sous `npm run
+            preview`, qui sert le build. C'est exactement la coupure voulue. */}
+        <div
+          className={
+            RESERVE_VISUAL
+              ? "mx-auto grid w-full max-w-7xl grid-cols-1 border-white/[0.10] md:grid-cols-2 md:border-x lg:grid-cols-[1fr_1.05fr]"
+              : "mx-auto w-full max-w-7xl border-white/[0.10] md:border-x"
+          }
+        >
+          {/* ── LA MOITIÉ GAUCHE : le propos ─────────────────────────────── */}
+          <div className="px-6 pb-16 pt-20 md:px-10 md:pb-24 md:pt-28 lg:px-14">
+            {/* La pastille. Bleu de la charte à faible opacité sur le noir,
+                le seul accent de tout le bloc. */}
+            <span className="inline-flex items-center rounded-[7px] bg-[#3b82f6]/[0.16] px-2.5 py-1 font-inter text-[12.5px] font-semibold tracking-[-0.01em] text-[#8ab4fa]">
+              Atlas
+            </span>
+
+            {/* LE TITRE, en deux encres. La première phrase est la promesse
+                déjà validée de la scène d'ouverture (« Atlas est l'assistant
+                qui connaît vos dossiers ») ; la seconde, en gris, dit ce qui en
+                découle. Rien de neuf n'est promis ici. */}
+            <h2 className="mt-6 font-instrument text-[clamp(2.1rem,4vw,3.4rem)] font-normal leading-[1.06] tracking-[-0.03em]">
+              <span className="text-white">
+                {t({
+                  fr: "L'assistant qui connaît vos dossiers.",
+                  en: "The assistant that knows your files.",
+                })}
+              </span>{" "}
+              <span className="text-white/40">
+                {t({
+                  fr: "Il les a lus, il sait où regarder.",
+                  en: "It has read them, it knows where to look.",
+                })}
+              </span>
+            </h2>
+
+            {/* Bouton cerclé, comme le « See more » de la référence : sur ce
+                bloc c'est la liste qui doit tenir le regard, pas le bouton. Le
+                bouton plein blanc reste celui de la grille, deux écrans plus
+                bas, qui ferme la démonstration. */}
+            <button
+              type="button"
+              onClick={openBooking}
+              className="group mt-9 inline-flex items-center gap-2.5 rounded-full border border-white/25 px-5 py-2.5 font-inter text-[14px] font-semibold text-white transition-colors duration-150 hover:border-white/50 hover:bg-white/[0.06]"
+            >
+              {t({ fr: "Réserver un appel", en: "Book a call" })}
+              <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+            </button>
+
+            {/* ── LA LISTE DES CINQ CAPACITÉS ────────────────────────────────
+                Filets ENTRE les entrées et pas autour : `first:border-t-0`
+                évite le double filet sous le bouton, `last:pb-0` évite le vide
+                sous la dernière. C'est le détail qui distingue une liste d'une
+                pile de cartes.
+                L'icône est en tête de ligne, alignée sur la première ligne du
+                titre (`mt-0.5`) et non centrée sur le bloc : les descriptions
+                font une ou deux lignes selon la langue, un centrage ferait
+                danser les icônes d'une entrée à l'autre. */}
+            {/* EN PLEINE LARGEUR, la liste passe en GRILLE : cinq entrées
+                empilées sur 1 280 px laisseraient les trois quarts de la ligne
+                vides, ce qui est le défaut même qu'on cherche à corriger. Deux
+                colonnes à partir de sm, trois à partir de lg — cinq entrées y
+                font trois puis deux, la rangée incomplète se lit comme une
+                grille et non comme un trou.
+                En mode réservé, la colonne fait la moitié de la page : la liste
+                simple reste la bonne forme. */}
+            <ul
+              className={
+                RESERVE_VISUAL
+                  ? "mt-14 md:mt-16"
+                  : "mt-14 grid gap-x-10 sm:grid-cols-2 md:mt-16 lg:grid-cols-3 lg:gap-x-14"
+              }
+            >
+              {ATLAS_CAPS.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <li
+                    key={c.label.en}
+                    className={
+                      RESERVE_VISUAL
+                        ? "flex gap-4 border-t border-white/[0.10] py-6 first:border-t-0 first:pt-0 last:pb-0"
+                        : "flex gap-4 border-t border-white/[0.10] py-6"
+                    }
+                  >
+                    <Icon
+                      aria-hidden
+                      className="mt-0.5 h-[18px] w-[18px] shrink-0 text-white/45"
+                      strokeWidth={1.6}
+                    />
+                    <div className="min-w-0">
+                      <h3 className="font-inter text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-white md:text-[16.5px]">
+                        {t(c.label)}
+                      </h3>
+                      <p className="mt-2 max-w-[46ch] font-inter text-[14px] leading-[1.55] text-white/45">
+                        {t(c.desc)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* ── LA MOITIÉ DROITE : RÉSERVÉE, VOLONTAIREMENT VIDE ───────────
+              Client 2026-08-20 : « n'essaie pas de répliquer leur animation à
+              droite, laisse un espace blanc, on verra ce qu'on met dedans ».
+              Ne rien mettre ici est la consigne, pas un oubli : c'est
+              l'emplacement du visuel à venir.
+              ⚠ EN DÉVELOPPEMENT SEULEMENT depuis le 2026-08-21 — en production
+              la section prend toute la largeur et cette colonne n'existe pas.
+              C'est ici qu'ira le visuel, et c'est en le posant qu'il faudra
+              supprimer `RESERVE_VISUAL` et ses deux branches.
+              `hidden md:block` : sur téléphone les deux colonnes s'empilent, et
+              une zone vide de 500 px sous la liste se lirait comme un bug. */}
+          {RESERVE_VISUAL && (
+            <div aria-hidden className="hidden border-l border-white/[0.10] md:block" />
+          )}
+        </div>
+      </section>
+
       {/* ── LA DÉMO DE L'ASSISTANT ──────────────────────────────────────────
           Client 2026-08-19 : « il faut que la vidéo soit juste en dessous de »
           la rangée des cinq capacités — l'ourlet qui ferme la scène de la
@@ -760,7 +971,7 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
           D'où `tone="dark"` sur la barre de lecture (rail blanc translucide,
           le rail encre serait invisible ici) et le liseré blanc à 10 % à la
           place de l'ombre, qu'un fond noir avale de toute façon.
-          53 secondes qui racontent quelque chose, donc AVEC la barre — même
+          56 secondes qui racontent quelque chose, donc AVEC la barre — même
           règle que le clip du module dans AutomationTabs. Lu par InViewVideo :
           MUET (sa piste audio n'est pas jouée, condition de l'autoplay), en
           boucle, piloté au défilement, reprise à zéro à chaque entrée.
@@ -777,7 +988,7 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
       <section
         data-nav-dark
         data-nav-shy
-        className="relative z-[20] bg-black px-5 md:px-12 pt-6 md:pt-16 pb-2 md:pb-4"
+        className="relative z-[20] bg-black px-6 md:px-12 pt-12 md:pt-16 pb-2 md:pb-4"
       >
         <div className="mx-auto w-full max-w-7xl">
           <VideoWithScrubber
@@ -790,36 +1001,67 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
         </div>
       </section>
 
-    <section
-      data-nav-dark
+    {/* ⚠ `motion.section` ET NON `section` : la feuille blanche remonte au
+        défilement (voir riseY, en tête de composant). Trois pièces la font
+        lire comme un rideau qui monte plutôt que comme une section de plus :
+          · `y` piloté au défilement, +88 px rendus pendant l'entrée ;
+          · `-mt-10` et le sommet ARRONDI, qui la posent PAR-DESSUS le noir au
+            lieu de bout à bout — c'est l'arrondi qui dit « une feuille passe
+            devant », un bord droit ne dirait rien ;
+          · `z-30`, supérieur au `z-20` de la vidéo au-dessus, sans quoi elle
+            passerait DESSOUS et le chevauchement serait invisible.
+        L'ombre est portée VERS LE HAUT (rayon négatif) : elle creuse la
+        jointure côté noir, ce qui est exactement ce qu'on voit quand une
+        feuille se soulève au-dessus d'une autre.
+        `overflow-hidden` était déjà là, il empêche l'arrondi de laisser
+        déborder la grille par les coins. */}
+    <motion.section
+      ref={riseRef}
       data-nav-shy
-      className="relative z-[20] pt-8 md:pt-14 pb-16 md:pb-32 px-5 md:px-12 overflow-hidden"
+      className="relative z-[30] -mt-10 rounded-t-[36px] pt-20 md:pt-28 pb-24 md:pb-32 px-6 md:px-12 overflow-hidden shadow-[0_-24px_50px_-24px_rgba(0,0,0,0.55)] md:rounded-t-[44px]"
       style={{
-        // ── NOIR PLEIN, PARTOUT (client 2026-08-15 : « mets en noir le fond de
-        // toute cette partie-là »). Un dégradé radial bleu nuit ouvrait la
-        // section (#0f1424 au sommet sur grand écran, #0a0a0a sur téléphone) :
-        // il faisait une couture visible juste sous la scène d'ouverture, qui,
-        // elle, est en noir absolu. Les deux blocs se lisent maintenant comme
-        // une seule surface. Le drapeau `isMobile` qui départageait les deux
-        // rampes est parti avec, il ne servait plus qu'à ça.
-        background: "#000",
+        /* LE MOUVEMENT DU RIDEAU. `y` est une valeur de mouvement Framer, pas
+           un nombre : elle vit dans le même objet `style` que le reste, il ne
+           peut y avoir qu'une seule prop `style` sur un JSX.
+           ⚠ ET C'EST POURQUOI `transform: translateZ(0)` A DISPARU d'ici. Il
+           promouvait la section en couche de composition ; laissé en place, il
+           ÉCRASERAIT le `transform` que Framer écrit pour animer `y`, et le
+           rideau ne bougerait pas d'un pixel, sans erreur nulle part. La
+           promotion en couche n'est pas perdue pour autant : un `transform`
+           animé la produit de toute façon, c'est même le cas le plus favorable
+           pour le navigateur. */
+        y: riseY,
+        /* ── BLANC (client 2026-08-19 : « mets le en blanc pour le
+           background ») ──────────────────────────────────────────────────
+           La section était en NOIR PLEIN depuis le 2026-08-15 (« mets en noir
+           le fond de toute cette partie-là ») et formait, avec la scène
+           d'ouverture et la vidéo de démonstration, une seule surface noire
+           continue. Ce n'est plus vrai : la coupure tombe désormais sous la
+           vidéo, et c'est une vraie rupture de section, pas une couture ratée.
+           Trois conséquences, toutes traitées :
+             1. `data-nav-dark` A ÉTÉ RETIRÉ de cette section. C'est lui qui
+                disait à la barre de navigation de passer en logo clair et en
+                libellés blancs ; laissé sur un fond blanc, il rendait la barre
+                illisible sur toute la hauteur de la section.
+             2. Les encres du bloc sont retournées (titre #111827, accroche
+                #5b6577, catégories #6b7688 qui est le plancher de la charte).
+             3. Le bouton principal repasse du blanc plein au bleu de la charte.
+           Le pas du haut est monté de pt-10 à pt-20 : sur fond noir la section
+           se fondait dans la vidéo au-dessus, en blanc elle a besoin de sa
+           propre respiration après la rupture.
+           ⚠ #ffffff et non #fcfbf7 : la section suivante (PlatformShowcase)
+           ouvre sur `#fcfbf7`, l'alternance de CLAUDE.md veut donc le blanc pur
+           ici. */
+        background: "#ffffff",
         // ── FLUIDITÉ DE LA REMONTÉE (client 2026-08-05 : « la remontée de la
         // partie Atlas est un peu buggée, fluidifie-la ») ──────────────────
-        // La section n'est pas animée : elle défile normalement et passe
-        // PAR-DESSUS la pile de cartes épinglées grâce à son `z-20`. C'est donc
-        // au navigateur de la redessiner à chaque image du scroll, et c'était
-        // cher : gradient radial plein écran, halo, cadre, et la simulation
-        // Atlas entière dessous.
-        //   · `translateZ(0)` la promeut en COUCHE de composition. Le
-        //     rideau devient un simple déplacement de couche au lieu d'une
-        //     repeinture, ce qui est exactement le mouvement recherché.
-        //   · `contain: paint` promet au navigateur que rien ne déborde de la
-        //     boîte — vrai, `overflow-hidden` est déjà là — donc il peut élaguer
-        //     tout le dessin hors cadre au lieu de l'évaluer.
-        // L'ombre portée haute, elle, est passée en calque (voir juste après) :
-        // en `box-shadow` de 72 px de flou sur un bloc pleine largeur, elle
-        // était re-floutée à chaque image, et c'était le poste le plus lourd.
-        transform: "translateZ(0)",
+        // La section passe PAR-DESSUS la pile de cartes épinglées, c'est donc
+        // au navigateur de la redessiner à chaque image du défilement, et
+        // c'était cher. `contain: paint` lui promet que rien ne déborde de la
+        // boîte — vrai, `overflow-hidden` est là — donc il peut élaguer tout le
+        // dessin hors cadre au lieu de l'évaluer.
+        // Le `translateZ(0)` qui l'accompagnait est parti le 2026-08-20 : voir
+        // la note sur `y` ci-dessus, il aurait annulé l'animation du rideau.
         contain: "paint",
       }}
     >
@@ -881,45 +1123,63 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
                  Une flèche posée SUR l'objet dit qu'elle déplace cet objet-là.
               3. UN COMPTEUR « n / 6 » sous le panneau, qui dit combien il en
                  reste. */}
-        {/* ══ LES USAGES, EN GRILLE ══════════════════════════════════════════
-            Client 2026-08-19, capture de la salle de presse OpenAI à l'appui :
-            « pour les fonctionnalités d'Atlas, je préférais que tu me fasses
-            une organisation un peu comme OpenAI, niveau du layout ». La
-            référence : deux colonnes, une tuile carrée à gauche de chaque
-            entrée, le titre et sa catégorie à droite, beaucoup de blanc.
+        {/* ══ LES USAGES, EN GRILLE COMPACTE ═════════════════════════════════
+            Client 2026-08-19, salle de presse OpenAI à l'appui, en trois
+            passes successives — l'historique compte, il explique la forme :
+              1. « une organisation un peu comme OpenAI, niveau du layout » →
+                 grille deux colonnes, vignette à gauche, titre à droite. Les
+                 vignettes étaient des dégradés grainés, abstraits.
+              2. « remets les designs que l'on avait généré avant, et mets le en
+                 blanc pour le background » → les six scènes AtlasSlideVisual
+                 reviennent, mais posées AU-DESSUS du texte et en pleine
+                 largeur de colonne (620 px) pour rester lisibles.
+              3. « une répartition en petites icônes, exactement comme le
+                 screen, pas en énormes icônes » → la vignette redescend à
+                 GAUCHE du titre, en carré compact. C'est l'état actuel.
 
-            ⚠ CE BLOC REMPLACE LE CARROUSEL du 2026-08-15 (barre de six
-            onglets, titre qui changeait avec l'onglet, panneau AtlasSlideVisual
-            à droite, flèches à cheval sur ses flancs, compteur « n / 6 »). Ce
-            qui se perd et ce qui se gagne, pour que la décision soit relisible :
-              · PERDU : les six scènes jouées. Elles montraient Atlas EN TRAIN
-                de répondre. `AtlasSlideVisual.tsx` et `ScaleToFit` restent dans
-                le dépôt, intacts et plus montés ici — remonter le carrousel,
-                c'est ressortir ce bloc de l'historique git de ce fichier.
-                La perte est amortie : la vidéo de démonstration juste au-dessus
-                montre le vrai logiciel en mouvement, ce qu'aucune scène
-                dessinée ne faisait.
-              · GAGNÉ : les six usages sont lisibles D'UN COUP. Le carrousel en
-                montrait un à la fois et demandait cinq clics pour faire le tour,
-                ce que personne ne fait sur une page de vente.
+              4. « fais en sorte que les encadrés soient plus grands » → la
+                 vignette passe de 168 à 224 px sur grand écran (128 / 168 /
+                 196 / 224 selon le palier), la gouttière se resserre de 64 à
+                 56 px pour rendre au titre la place prise, et le rayon suit
+                 (14 → 18 px) : un carré plus grand avec le même arrondi paraît
+                 plus carré, pas plus grand.
+
+            ⚠ CE QUE LA PETITE VIGNETTE COÛTE, ET POURQUOI C'EST QUAND MÊME LE
+            BON CHOIX. Une scène est une planche de 1000 x 880 dessinée pour
+            être lue en grand : à 224 px le facteur tombe à 0,25 et la phrase de
+            sa carte blanche, posée à 19,5 px, se rend à 5 px. Elle n'est plus
+            lisible, et ce n'est PAS un défaut à corriger — à cette taille la
+            scène joue le rôle exact des vignettes de la référence, qui sont
+            elles aussi des images muettes : elle donne à chaque ligne une
+            couleur et une silhouette reconnaissables, et c'est le TITRE à côté
+            qui porte le sens. Le visiteur qui veut voir une scène en grand la
+            voit dans la vidéo de démonstration, juste au-dessus.
+            Conséquence pratique : `aria-hidden` sur la vignette. À 3,7 px son
+            texte n'est plus une information pour personne, et l'étiquette que
+            AtlasSlideVisual expose (`role="img"` + description de la scène)
+            ferait lire à un lecteur d'écran une description de blocs vides
+            avant le titre qui, lui, dit vraiment quelque chose.
+
+            LE CADRAGE EST EN « COVER », PAS EN « FIT ». Réduire 1000 x 880
+            pour qu'il TIENNE dans un carré laisserait deux bandes vides en
+            haut et en bas ; on agrandit donc jusqu'à ce que le petit côté
+            remplisse (facteur = côté / 880) et on rogne les 13,6 % qui
+            dépassent en largeur, centrés. D'où `--k` calculé en CSS à partir
+            de `--tile` : les deux restent liés quelle que soit la taille de
+            palier, là où deux constantes séparées finiraient par diverger.
 
             LE TITRE DE CHAQUE ENTRÉE EST `line`, PAS `head`. `head` est une
-            question en deux encres (« Où en est ce dossier ? » / « Atlas fait
-            le tour des pièces. ») : elle marchait en 3 rem au-dessus d'un
-            panneau, elle fait deux phrases empilées dans une case de grille.
-            `line` est déjà le bénéfice en une ligne (« Retrouvez une pièce sans
-            rouvrir dix dossiers »), c'est exactement le rôle du titre chez
-            OpenAI. `tag` devient la catégorie en dessous, à la place de la date
-            de la référence : nous n'avons pas de date à mettre là, et en
-            inventer une serait un faux. `head`, `ask` et `alt` ne sont plus
-            lus ici ; ils restent dans USE_CASES pour le jour où le carrousel
-            revient. */}
+            question en deux encres qui fait deux phrases empilées dans une
+            case de grille ; `line` est déjà le bénéfice en une ligne, c'est le
+            rôle du titre chez OpenAI. `tag` devient la catégorie en dessous, à
+            la place de la date de la référence : nous n'avons pas de date à
+            mettre là, et en inventer une serait un faux. */}
         <motion.div variants={fadeInUp}>
           <div className="max-w-[42ch]">
-            <h3 className="font-instrument text-[clamp(1.5rem,3.7vw,3.2rem)] font-normal leading-[1.07] tracking-[-0.03em] text-white">
+            <h3 className="font-instrument text-[clamp(2rem,3.7vw,3.2rem)] font-normal leading-[1.07] tracking-[-0.03em] text-[#111827]">
               {t({ fr: "Ce qu'Atlas sait faire.", en: "What Atlas can do." })}
             </h3>
-            <p className="mt-4 font-inter text-[14.5px] leading-relaxed text-white/50 md:mt-5 md:text-[18px] md:leading-[1.55]">
+            <p className="mt-5 font-inter text-[17px] leading-[1.55] text-[#5b6577] md:text-[18px]">
               {t({
                 fr: "Six demandes du quotidien, posées en français, traitées sur vos propres fichiers.",
                 en: "Six everyday requests, asked in plain words, answered on your own files.",
@@ -927,92 +1187,124 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
             </p>
           </div>
 
-          {/* LA GRILLE. Deux colonnes à partir de md, UNE SEULE en dessous.
-              ⚠ Le bloc était à deux colonnes à TOUTES les largeurs, et le
-              client l'a renvoyé le 2026-08-23, captures du bureau à l'appui :
-              « il faut que le layout ressemble plutôt à cela pour la partie
-              ce qu'Atlas sait faire ». Ce qui fait la référence, ce n'est pas
-              le NOMBRE de colonnes, c'est la PROPORTION de chaque entrée : une
-              tuile franche, le bénéfice en une ou deux lignes à côté, la
-              catégorie en dessous, et de l'air. Sur deux colonnes de téléphone
-              cette proportion est détruite — mesuré à 390 px : 165 px par
-              entrée, dont 62 de tuile et 12 de gouttière, soit 91 px pour le
-              titre, qui tombait en CINQ lignes de trois mots. Une colonne rend
-              252 px au titre, qui reprend ses deux lignes, et la tuile passe de
-              62 à 84 px pour retrouver le rapport tuile / texte du bureau.
-              Le seuil est `md` et non `sm` : entre 640 et 767 la grille à deux
-              colonnes ne laissait que 146 px au titre, soit trois lignes — le
-              même défaut en moins voyant.
-              `gap-x-16` est large à dessein — c'est la gouttière de la
-              référence, et c'est elle qui empêche de lire la grille en rangées
-              horizontales au lieu de six entrées distinctes. Elle n'a plus
-              d'effet sous md, où il n'y a qu'une colonne. */}
-          <div className="mt-8 grid grid-cols-1 gap-x-5 gap-y-8 md:mt-16 md:grid-cols-2 md:gap-x-16 md:gap-y-12">
-            {USE_CASES.map((u, i) => {
-              const Icon = u.icon;
-              return (
-                <article key={u.tag.en} className="flex items-center gap-4 md:gap-7">
-                  {/* LA TUILE. Un dégradé de la charte, un voile de bruit, et
-                      l'icône de l'usage au centre.
-                      · Le dégradé est TOUJOURS pris dans la palette (bleu,
-                        bleu foncé, sarcelle, encre). La référence enchaîne des
-                        roses, des oranges et des verts ; six teintes libres
-                        ici casseraient la règle « un seul bleu » de la charte
-                        et feraient un nuancier au milieu d'une page noire.
-                        Les six tuiles varient donc par la COMBINAISON et le
-                        sens du dégradé, pas par la teinte.
-                      · LE BRUIT (`NOISE`, un feTurbulence en data-URI) est ce
-                        qui donne le grain diffus de la référence. En
-                        `mix-blend-overlay`, il assombrit et éclaircit le
-                        dégradé par petites touches au lieu de poser un gris
-                        par-dessus.
-                      · L'ICÔNE est un ajout à la référence, dont les tuiles
-                        sont purement décoratives. Ici elle identifie l'usage
-                        et reprend celle qui coiffait l'onglet du carrousel :
-                        c'est ce qui reste du repère visuel qu'il donnait.
-                      `aria-hidden` sur les deux calques : ils ne portent aucune
-                      information que le titre à côté ne donne déjà. */}
+          {/* `gap-x-16` est la gouttière large de la référence : c'est elle qui
+              empêche de lire la grille en rangées horizontales au lieu de six
+              entrées distinctes. */}
+          <div className="mt-12 grid gap-x-10 gap-y-10 md:mt-16 md:grid-cols-2 md:gap-x-14 md:gap-y-14">
+            {USE_CASES.map((u) => (
+              /* ── L'ENTRÉE RÉAGIT AU SURVOL (client 2026-08-19 : « ajoute une
+                 animation quand on passe sur les différents encadrés ») ──────
+                 `group` sur l'article : c'est le survol de TOUTE l'entrée, pas
+                 de la seule vignette, qui déclenche — la cible est alors deux
+                 fois plus large et le geste n'a pas à viser.
+                 Trois choses bougent ensemble, toutes discrètes :
+                   · la vignette se soulève de 4 px et grandit de 3 %,
+                   · son ombre s'approfondit et descend, ce qui est ce qui fait
+                     vraiment lire le soulèvement (une translation seule glisse,
+                     elle ne décolle pas),
+                   · le titre avance de 2 px, pour que le texte participe au
+                     lieu de rester planté à côté d'une image qui bouge.
+                 ⚠ PAS DE CHANGEMENT DE COULEUR NI DE SOULIGNEMENT sur le titre :
+                 l'entrée n'est PAS cliquable aujourd'hui. Un bleu au survol
+                 promettrait une destination qui n'existe pas encore. Le jour où
+                 la page listant les automatisations existe, l'article devient
+                 un lien et c'est là qu'un signal de cliquabilité aura un sens.
+                 `motion-safe:` sur les seules transformations : un visiteur qui
+                 a demandé moins d'animations garde l'ombre, qui l'informe, et
+                 perd le mouvement, qui le gêne. */
+              <article
+                key={u.tag.en}
+                className="group flex items-center gap-5 md:gap-7"
+              >
+                {/* LA VIGNETTE.
+                    `--tile` porte le côté du carré, `--k` s'en déduit. Le
+                    `translate(-50%,-50%)` recentre la planche sur la vignette
+                    AVANT la mise à l'échelle (l'origine du transform reste au
+                    centre), ce qui rogne symétriquement à gauche et à droite.
+                    L'ombre remplace le contraste que le fond noir donnait
+                    gratuitement : sur blanc, une plaque claire sans ombre
+                    flotte sans se poser. */}
+                {/* ⚠ `--tile` EST SANS UNITÉ, et ce n'est pas un détail de
+                    style. Écrit `104px`, le facteur `calc(var(--tile) / 880)`
+                    vaut `0.118px` — une LONGUEUR. `scale()` n'accepte qu'un
+                    nombre : le transform entier est alors invalide, la planche
+                    reste à sa taille réelle et la vignette ne montre plus que
+                    le coin haut-gauche du dégradé, en blanc cassé. Aucune
+                    erreur en console, juste six carrés presque vides. Les
+                    pixels sont donc remis au dernier moment, sur la largeur. */}
+                <div
+                  aria-hidden
+                  className="relative aspect-square w-[calc(var(--tile)*1px)] shrink-0 overflow-hidden rounded-[14px] shadow-[0_10px_24px_-16px_rgba(10,37,64,0.38)] transition-[transform,box-shadow] duration-300 ease-out group-hover:shadow-[0_20px_40px_-18px_rgba(10,37,64,0.42)] motion-safe:group-hover:-translate-y-1 motion-safe:group-hover:scale-[1.03] [--tile:104] sm:[--tile:132] md:[--tile:152] lg:[--tile:168]"
+                  style={{ ["--k" as string]: "calc(var(--tile) / 880)" }}
+                >
                   <div
-                    className="relative aspect-square w-[84px] shrink-0 overflow-hidden rounded-[12px] sm:w-[132px] md:w-[150px] md:rounded-[14px] lg:w-[168px]"
-                    style={{ backgroundImage: TILE_ART[i % TILE_ART.length] }}
+                    className="absolute left-1/2 top-1/2 h-[880px] w-[1000px]"
+                    style={{ transform: "translate(-50%, -50%) scale(var(--k))" }}
                   >
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 opacity-[0.38] mix-blend-overlay"
-                      style={{ backgroundImage: NOISE, backgroundSize: "170px 170px" }}
-                    />
-                    <Icon
-                      aria-hidden
-                      className="absolute left-1/2 top-1/2 h-[26%] w-[26%] -translate-x-1/2 -translate-y-1/2 text-white/90"
-                      strokeWidth={1.5}
+                    {/* `textless` (client 2026-08-19 : « pas de texte dedans,
+                        juste le design »). À 0,25, la phrase de la carte
+                        blanche se rendait à 5 px et les petites capitales à
+                        2,5 px : du bruit gris sur une composition propre.
+                        Chaque libellé devient une barre, sans que rien ne
+                        bouge — voir la note de AtlasSlideVisual.
+                        `ask` continue d'être passé : il porte encore la boîte
+                        (donc la hauteur de la carte, qui varie d'une scène à
+                        l'autre selon le nombre de lignes), il n'est plus que
+                        transparent. */}
+                    <AtlasSlideVisual
+                      visual={u.visual}
+                      ask={t(u.ask)}
+                      label={t(u.alt)}
+                      textless
                     />
                   </div>
+                </div>
 
-                  {/* `min-w-0` : sans lui, la colonne de texte d'une grille
-                      refuse de descendre sous la largeur de son plus long mot
-                      et pousse la tuile hors de la case sur les petits écrans. */}
-                  <div className="min-w-0">
-                    <h4 className="font-inter text-[15px] font-medium leading-[1.3] tracking-[-0.01em] text-white md:text-[19px]">
-                      {t(u.line)}
-                    </h4>
-                    <p className="mt-1.5 font-inter text-[12px] leading-tight text-white/40 md:mt-3 md:text-[13.5px]">
-                      {t(u.tag)}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
+                {/* `min-w-0` : sans lui, la colonne de texte d'une grille refuse
+                    de descendre sous la largeur de son plus long mot et pousse
+                    la vignette hors de la case sur les petits écrans. */}
+                <div className="min-w-0 transition-transform duration-300 ease-out motion-safe:group-hover:translate-x-0.5">
+                  {/* ⚠ INSTRUMENT SANS, EN 400, ET C'EST UN CHANGEMENT DE FACE
+                      (client 2026-08-20 : « les encadrés un peu plus petits, et
+                      les phrases probablement dans une police différente…
+                      quelque chose de plus minimaliste »). Le titre était en
+                      Inter 500. Trois choses le rendaient plus lourd que la
+                      référence : la graisse, la face de labeur, et la taille
+                      des vignettes.
+                      La charte range les titres de carte du bento en Inter,
+                      mais elle range aussi TOUS les grands titres d'affichage
+                      en Instrument Sans — et c'est bien de titres qu'il s'agit
+                      ici, pas d'étiquettes d'interface. Instrument Sans en 400
+                      est exactement la respiration de la référence, là où Inter
+                      500 tenait de l'étiquette.
+                      ⚠ NE PAS DESCENDRE SOUS 400 : Instrument Sans n'a pas de
+                      graisse plus légère, `font-light` y est du code mort (voir
+                      CLAUDE.md). Pour l'alléger encore, le seul levier serait
+                      l'anticrénelage WebKit. */}
+                  <h4 className="font-instrument text-[18px] font-normal leading-[1.25] tracking-[-0.02em] text-[#111827] md:text-[21px]">
+                    {t(u.line)}
+                  </h4>
+                  {/* `#6b7688` est le PLANCHER de la charte sur fond clair :
+                      rien ne descend plus bas. Passé en 12,5 px : la catégorie
+                      doit rester la ligne secondaire, or le titre vient de
+                      s'alléger, l'écart entre les deux se creuse par la taille
+                      plutôt que par la couleur. */}
+                  <p className="mt-2.5 font-inter text-[12.5px] leading-tight text-[#6b7688] md:mt-3">
+                    {t(u.tag)}
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
 
-          {/* Le bouton était dans la colonne de gauche du carrousel, sous le
-              titre qui changeait. Il ferme maintenant la grille : on lit les
-              six usages, puis on prend rendez-vous. Blanc plein — sur une
-              section noire c'est le seul contraste qui tienne le rôle de bouton
-              principal. */}
+          {/* Le bouton ferme la grille : on lit les six usages, puis on prend
+              rendez-vous. Il était BLANC PLEIN tant que la section était noire,
+              faute d'autre contraste possible ; sur blanc il repasse au bleu de
+              la charte, comme tous les CTA principaux du site. */}
           <button
             type="button"
             onClick={openBooking}
-            className="group mt-9 inline-flex items-center gap-2.5 rounded-[8px] bg-white px-[18px] py-2.5 font-inter text-[13.5px] font-semibold text-[#0b1020] transition-colors duration-150 hover:bg-white/85 md:mt-16 md:px-5 md:py-3 md:text-[14.5px]"
+            className="group mt-12 inline-flex items-center gap-2.5 rounded-[8px] bg-[#3b82f6] px-5 py-3 font-inter text-[14.5px] font-semibold text-white transition-colors duration-150 hover:bg-[#2563eb] md:mt-16"
           >
             {t({ fr: "Réserver un appel", en: "Book a call" })}
             <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
@@ -1114,7 +1406,7 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
         </motion.div>
         )}
       </motion.div>
-    </section>
+    </motion.section>
 
     {/* ══ « CRÉATION DE SYSTÈME D'ORCHESTRATION » A ÉTÉ RETIRÉE ═══════════
         Client 2026-08-15 : « enlève cette partie-là », titre, phrase et carte

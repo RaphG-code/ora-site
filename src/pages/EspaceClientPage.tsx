@@ -232,26 +232,36 @@ export default function EspaceClientPage({ theme, onNavigate, openBooking }: Esp
               Les deux portraits (client 2026-08-13 : « montrer qu'il y a un
               humain derrière ») accompagnent l'appel découverte dès l'écran de
               connexion — c'est celui que voient tous les visiteurs, connectés
-              ou non. Mêmes fichiers que le bandeau de l'espace, en petit. */}
+              ou non. Mêmes fichiers que le bandeau de l'espace, en plus petit.
+              ⚠ AGRANDIS DE 36 À 56 px le 2026-08-19 (client : « dans mon
+              espace, agrandis la photo de nos deux têtes »). À 36 px les deux
+              visages étaient à la limite du reconnaissable : la pile se lisait
+              comme une pastille décorative, pas comme deux personnes, ce qui
+              annulait la raison d'être même des portraits (« montrer qu'il y a
+              un humain derrière »). Le chevauchement suit, de -8 à -12 px, et
+              l'anneau de 2 à 3 px : à cette taille, un liseré de 2 px ne sépare
+              plus assez nettement les deux têtes.
+              Les fichiers source font 512 px, l'agrandissement ne coûte donc
+              aucune netteté. */}
           <div
             className="ec-rise mt-9 pt-7 border-t border-gray-200/80 dark:border-white/[0.08]"
             style={{ animationDelay: "510ms" }}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex -space-x-2 shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="flex -space-x-3 shrink-0">
                 <img
                   src="/equipe/fondateur-1.png"
                   alt=""
                   aria-hidden
                   draggable={false}
-                  className="h-9 w-9 rounded-full object-cover ring-2 ring-[#fcfbf7] dark:ring-black select-none"
+                  className="h-14 w-14 rounded-full object-cover ring-[3px] ring-[#fcfbf7] dark:ring-black select-none"
                 />
                 <img
                   src="/equipe/fondateur-2.png"
                   alt=""
                   aria-hidden
                   draggable={false}
-                  className="h-9 w-9 rounded-full object-cover ring-2 ring-[#fcfbf7] dark:ring-black select-none"
+                  className="h-14 w-14 rounded-full object-cover ring-[3px] ring-[#fcfbf7] dark:ring-black select-none"
                 />
               </div>
               <p className="font-inter text-[13.5px] leading-snug text-gray-500 dark:text-gray-400">
