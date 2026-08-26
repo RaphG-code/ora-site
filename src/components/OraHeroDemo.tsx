@@ -2036,14 +2036,72 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
               {t({ fr: "Commencer", en: "Get started" })}
               <ArrowRight className="w-[18px] h-[18px]" />
             </a>
-            {/* Même famille que le titre (Instrument Sans) et l'étoile ✦ en
-                séparateur, comme la ligne de réassurance de monday.com. */}
-            <p className="mt-4 font-instrument font-normal text-[14.5px] text-gray-400 dark:text-gray-500 text-center">
-              {t({
-                fr: "Testez Ora sur vos fichiers ✦ Sans installation ✦ Directement dans votre navigateur",
-                en: "Try Ora on your own files ✦ No install ✦ Right in your browser",
-              })}
-            </p>
+            {/* ══ LA RANGÉE DE PREUVE ═════════════════════════════════════════
+                Client 2026-08-21, capture Softriver à l'appui : « il faudrait
+                faire un truc de social proof un peu comme 100 % EU, no LLM or
+                american cloud ».
+
+                Elle remplace la ligne de réassurance de monday.com (« Testez
+                Ora sur vos fichiers ✦ Sans installation ✦ Directement dans
+                votre navigateur »), qui vantait la commodité là où la capture
+                de référence apporte de la CRÉDIBILITÉ. Les mots forts passent
+                en encre pleine, comme Softriver met « delivered in 48 hours »
+                en gras au milieu d'une phrase grise.
+
+                ⚠ CHAQUE MENTION EST DÉJÀ ÉCRITE AILLEURS SUR LE SITE, et c'est
+                la règle qui a présidé à leur choix. Rien n'est inventé ici :
+                  · « Hébergé en Europe » et « Hors CLOUD Act » viennent mot
+                    pour mot de la FAQ (« En Europe : Francfort et Genève, hors
+                    de portée du CLOUD Act américain ») ;
+                  · « Chiffré sur votre appareil » de PrivacyShowcase ;
+                  · « Même fichier, même résultat » de la réponse FAQ sur les
+                    chatbots et de la carte « Les mêmes chiffres ».
+
+                ⚠ DEUX FORMULATIONS DEMANDÉES N'ONT PAS ÉTÉ REPRISES TELLES
+                QUELLES, et les deux écarts sont volontaires :
+
+                1. « 100 % EU » → « Hébergé en Europe ». Les serveurs sont à
+                   Francfort ET Genève. Genève est en Suisse, qui n'est pas dans
+                   l'Union européenne : « 100 % EU » serait factuellement faux
+                   sur la moitié de l'hébergement. « Europe » est exact et dit
+                   la même chose à un lecteur.
+
+                2. « No LLM » n'est PAS affiché. Deux raisons distinctes.
+                   D'abord ce serait un surengagement : la FAQ affirme que les
+                   LIVRABLES CHIFFRÉS reposent sur des règles de calcul
+                   explicites, pas qu'aucun modèle de langue n'existe dans le
+                   produit — Atlas répond à des questions en français, ce qu'un
+                   moteur de règles seul ne fait pas. Un « no LLM » en haut de
+                   page serait plus large que ce que le site tient.
+                   Ensuite c'est la position établie : la différence avec les
+                   chatbots se dit de façon OBLIQUE partout, et frontale
+                   uniquement dans la FAQ, où il y a la place d'expliquer.
+                   « Même fichier, même résultat » est la forme oblique — elle
+                   dit exactement ce qui manque à un LLM, sans le nommer et
+                   sans rien promettre de plus que ce qui est vrai. */}
+            <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-instrument text-[14.5px] font-normal text-gray-400 dark:text-gray-500">
+              {[
+                { fort: { fr: "Hébergé en Europe", en: "Hosted in Europe" }, reste: { fr: "Francfort, Genève", en: "Frankfurt, Geneva" } },
+                { fort: { fr: "Hors CLOUD Act", en: "Outside the CLOUD Act" }, reste: { fr: "américain", en: "" } },
+                { fort: { fr: "Chiffré", en: "Encrypted" }, reste: { fr: "sur votre appareil", en: "on your device" } },
+                { fort: { fr: "Même fichier, même résultat", en: "Same file, same result" }, reste: { fr: "", en: "" } },
+              ].map((s, i) => (
+                <li key={s.fort.en} className="flex items-center gap-5">
+                  {/* Le séparateur est porté par l'entrée SUIVANTE : en
+                      `flex-wrap`, un séparateur autonome se retrouverait seul
+                      en tête de ligne au passage à la ligne. */}
+                  {i > 0 && (
+                    <span aria-hidden className="text-gray-300 dark:text-white/20">
+                      ✦
+                    </span>
+                  )}
+                  <span>
+                    <span className="text-[#42506b] dark:text-gray-300">{t(s.fort)}</span>
+                    {t(s.reste) ? ` ${t(s.reste)}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </motion.div>
           </div>
         </div>
