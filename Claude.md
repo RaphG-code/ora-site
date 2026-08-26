@@ -381,6 +381,20 @@ Book a Call button? there is already a button for it ») : le bureau ne porte
 pas d'équivalent à cet endroit, et la prise de rendez-vous reste atteignable
 par la barre de navigation et par le CTA de fin de page.
 
+**La rangée de preuve sous le bouton est EMPILÉE, et c'est un second renvoi**
+(fusion de `main`, PR nº 41, 2026-08-26). Trois mentions en colonne, corps de
+13,5 px : « Hébergé en Europe, hors CLOUD Act », « Chiffré sur votre appareil »,
+« Même fichier, même résultat ». Cette branche l'avait passée en rangée qui se
+replie (`flex-wrap`, 12,5 px) pour gagner de la hauteur sous le titre ; le
+libellé de `main` est bien plus long et la replie n'est plus tenable. Mesurée à
+390 px, la première mention fait à elle seule **297 px** : en `flex-wrap` elle
+se couperait au milieu, ce que le commentaire du fichier interdit. ⚠ Ne pas la
+remettre en rangée. Et 13,5 px n'est PAS une valeur de bureau qui déborde :
+`OraHeroMobile.tsx` ne sert que le téléphone, la valeur y a été posée pour lui.
+⚠ **Trois mentions, pas quatre.** La quatrième pousserait la réplique du
+logiciel hors du premier écran — à trois, elle commence à 469 px sur un écran
+de 844.
+
 **Paliers :** `xs` = 400 px a été ajouté (rien n'existait sous `sm` = 640, or
 320 → 430 px sépare un iPhone SE d'un 15 Pro Max). La carte `screens` est
 déclarée EN ENTIER dans `theme` et non dans `theme.extend` : sous `extend` un
