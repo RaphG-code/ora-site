@@ -1314,26 +1314,43 @@ export default function UseCasesBento({ openBooking }: { openBooking?: () => voi
       // tombent tous deux sur rgb(194,·,·) au-dessus du blanc) : ce qui change
       // est la SATURATION, pas la masse. Places et rayons restent au chiffre
       // près, comme à chaque passage sur cette carte.
-      // ══ ⚠ CARTE BLANCHE, ET C'EST LE TROISIÈME ALLER-RETOUR ═══════════════
-      // Cette carte n'a plus de `wash`. Historique, parce qu'il compte pour
-      // qui reprendra ce fichier :
+      // ══ ⚠ LES NAPPES BLEUES, QUATRIÈME ALLER-RETOUR ══════════════════════
+      // Historique complet, parce qu'il compte pour qui reprendra ce fichier :
       //   · 06 → 07 août : trois voiles bleus, réglés CINQ fois (« l'ombre
       //     bleue ne doit pas couper le texte », « mets moins d'ombre bleu »,
       //     puis passage au bleu de l'anneau de particules) ;
       //   · 15 août : retirés d'un bloc (« pour ces deux encadrés il faut que
       //     le background soit blanc ») ;
-      //   · 19 août : restaurés au chiffre près depuis le commit 2c3e9c4
-      //     (« remets le bleu de background qu'il y avait avant ») ;
-      //   · 21 août : retirés de nouveau (« put the background of this part
-      //     into white »).
-      // ⚠ NE PAS LES REJOUER DE MÉMOIRE si la demande revient. Les valeurs
-      // exactes des trois nappes — ellipse haute à hauteur de barre de fenêtre,
-      // halo montant du bas-gauche, pointe bas-droite — sont dans l'historique
-      // git de ce fichier, au commit 2c3e9c4, et c'est de là qu'il faut les
-      // reprendre. Les redessiner à l'estime, c'est rouvrir les cinq passes de
-      // réglage d'août.
-      // La carte tient donc par son liseré, son ombre et la fenêtre du logiciel
-      // qu'elle porte. `RING_BLUE` sert encore aux ombres de maquette.
+      //   · 19 août : restaurés (« remets le bleu de background qu'il y avait
+      //     avant ») ;
+      //   · 21 août, matin : retirés (« put the background of this part into
+      //     white ») ;
+      //   · 21 août, après-midi : REMIS (« remets les couleurs de background
+      //     bleu ici »). C'est l'état actuel.
+      //
+      // ⚠ LA RÈGLE QUI A TENU À CHAQUE FOIS : ne jamais les rejouer de mémoire.
+      // Les trois nappes ci-dessous sont reprises AU CHIFFRE PRÈS du commit
+      // 2c3e9c4, à chaque restauration. Les redessiner à l'estime rouvrirait
+      // les cinq passes de réglage d'août, et c'est précisément ce que ces
+      // quatre allers-retours ont évité.
+      //
+      // Les trois nappes, dans l'ordre où elles sont empilées :
+      //   · l'ellipse haute, à hauteur de la barre de la fenêtre — c'est elle
+      //     qu'on voit à travers le verre translucide, et elle passe À CÔTÉ du
+      //     titre, jamais dessous ;
+      //   · le grand halo montant du bas-gauche, éteint avant la mi-hauteur ;
+      //   · la pointe bas-droite, la plus discrète des trois.
+      // La carte reste BLANCHE (pas de `bg`) : ce sont ces voiles qui la
+      // colorent PARTIELLEMENT, ce que le client avait demandé explicitement le
+      // 2026-08-07 — « elle ne couvrait pas tout l'encadré mais seulement une
+      // petite partie du bas ».
+      //
+      // ⚠ La carte voisine (« Les mêmes chiffres, à chaque exécution ») n'a
+      // JAMAIS eu de nappe : elle est postérieure au commit 2c3e9c4. Il n'y a
+      // donc rien à y restaurer, et lui en poser une serait une création, pas
+      // une remise en état.
+      wash:
+        `radial-gradient(48% 28% at 76% 36%, rgba(${RING_BLUE.top},0.3) 0%, rgba(${RING_BLUE.top},0.15) 46%, rgba(255,255,255,0) 74%), radial-gradient(70% 92% at -6% 100%, rgba(${RING_BLUE.bot},0.27) 0%, rgba(${RING_BLUE.bot},0.14) 36%, rgba(255,255,255,0) 76%), radial-gradient(58% 40% at 84% 110%, rgba(${RING_BLUE.bot},0.11) 0%, rgba(255,255,255,0) 64%)`,
       // Corps et largeur propres à cette carte, mais GRAISSE COMMUNE : la
       // phrase est repassée en 400 comme tous les autres titres de la grille
       // (client 2026-08-07, « la même police que les autres titres »), après
@@ -1377,16 +1394,36 @@ export default function UseCasesBento({ openBooking }: { openBooking?: () => voi
       // 230 px de vide entre le titre et la maquette absorbent le mouvement.
       mockupClass: "-mx-3 md:-mx-5 mb-2 md:mb-2",
       span: "third",
-      // ⚠ APLAT ET NUAGES RETIRÉS (client 2026-08-15, même demande que sa
-      // voisine : « il faut que le background soit blanc »). Elle portait le
-      // dégradé pervenche pleine carte plus les nuages blancs de la carte
-      // GPT-Live de référence. Les deux cartes de la rangée sont donc blanches
-      // et se lisent comme une paire, ce qu'elles n'étaient pas : l'une était
-      // blanche à voiles, l'autre un aplat soutenu.
-      // Conséquence à ne pas oublier : `ink` n'a jamais été posé ici, et c'est
-      // heureux — le marine de la grille redevient lisible de lui-même dès que
-      // le fond n'est plus teinté. FULL_PERI_BG et WASH.puffs servent encore
-      // ailleurs, rien n'est à supprimer.
+      // ══ ⚠ APLAT PERVENCHE ET NUAGES : RETIRÉS LE 15 AOÛT, REMIS LE 21 ═════
+      // Client 2026-08-21 : « pour Les mêmes chiffres, il faut remettre le bleu
+      // d'arrière-plan ombré qu'il y avait dans les versions précédentes ».
+      // Ils avaient sauté le 2026-08-15, même demande que sa voisine (« il faut
+      // que le background soit blanc »).
+      //
+      // Ce que la carte porte, et qui n'est PAS ce que porte sa voisine :
+      //   · `bg` — FULL_PERI_BG, un dégradé pervenche PLEINE CARTE, du blanc en
+      //     haut au #8e9cef au pied. C'est le « bleu ombré » demandé : l'ombre
+      //     vient de ce que la rampe s'assombrit vers le bas ;
+      //   · `wash` — WASH.puffs, les trois nuages blancs de la carte GPT-Live
+      //     de référence, qui empêchent l'aplat de se lire comme un aplat.
+      // Sa voisine (« Gagnez des heures… ») reste BLANCHE à trois voiles
+      // partiels. Les deux cartes de la rangée ne se lisent donc plus comme une
+      // paire, et c'est un écart assumé sur demande, pas un oubli : c'est
+      // exactement ce qui avait motivé le retrait du 15 août.
+      //
+      // ⚠ TOUJOURS PAS DE `ink`, ET C'EST VÉRIFIÉ, PAS SUPPOSÉ. La rampe reste
+      // très claire sur les deux tiers hauts, là où vivent le titre et le
+      // paragraphe ; le marine de la grille y tient son contraste. Le #8e9cef
+      // du pied ne rencontre aucun texte, seulement la maquette. Reposer `ink`
+      // éclaircirait le titre sur un fond qui, lui, est resté pâle.
+      //
+      // ⚠ CES VALEURS NE VIENNENT PAS DE L'HISTORIQUE GIT, contrairement aux
+      // nappes de la voisine. La carte n'a été committée qu'au b2dad03, DÉJÀ
+      // sans son fond : la version pervenche n'a jamais été versionnée. Ce sont
+      // les constantes FULL_PERI_BG et WASH.puffs, restées dans ce fichier,
+      // qui la reconstituent — c'est bien ce qu'elle appliquait.
+      bg: FULL_PERI_BG,
+      wash: WASH.puffs,
       // Les « ombres bleu clair » : la maquette est détourée par une ombre
       // bleue, qui vit sur l'aplat teinté là où une ombre neutre s'éteindrait.
       // L'AUTRE « ombre bleue » des deux cartes du haut, passée elle aussi au

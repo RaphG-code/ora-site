@@ -158,13 +158,21 @@ export default function OraHeroMobile({ openBooking }: { openBooking: () => void
           <ArrowRight className="h-[18px] w-[18px]" />
         </a>
 
-        {/* Stacked instead of the desktop's one-line « ✦ » list, which wrapped
-            awkwardly at this width. */}
+        {/* ⚠ MÊME RANGÉE DE PREUVE QUE LE HERO DE BUREAU (2026-08-21), au mot
+            près : les deux doivent dire la même chose, c'est le même écran vu
+            sur deux tailles. Voir le pavé de OraHeroDemo pour le détail des
+            arbitrages — notamment pourquoi « 100 % EU » est devenu « Hébergé en
+            Europe » (Genève n'est pas dans l'Union) et pourquoi « no LLM » n'y
+            figure pas.
+            Empilée et non sur une ligne : à cette largeur, la liste à « ✦ » du
+            bureau se coupait n'importe où. La quatrième mention est donc
+            abandonnée ici — quatre lignes de réassurance repousseraient la
+            réplique du logiciel hors du premier écran. */}
         <ul className="mt-4 flex flex-col items-center gap-1.5 font-inter text-[13.5px] text-gray-400 dark:text-gray-500">
           {[
-            t({ fr: "Testez Ora sur vos fichiers", en: "Try Ora on your own files" }),
-            t({ fr: "Sans installation", en: "No install" }),
-            t({ fr: "Directement dans votre navigateur", en: "Right in your browser" }),
+            t({ fr: "Hébergé en Europe, hors CLOUD Act", en: "Hosted in Europe, outside the CLOUD Act" }),
+            t({ fr: "Chiffré sur votre appareil", en: "Encrypted on your device" }),
+            t({ fr: "Même fichier, même résultat", en: "Same file, same result" }),
           ].map((line) => (
             <li key={line} className="flex items-center gap-1.5">
               <Check className="h-[13px] w-[13px] shrink-0 text-emerald-500" strokeWidth={3} />
