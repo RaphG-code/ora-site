@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
+  Bell,
+  CalendarCheck,
   FileOutput,
   FolderSearch,
   GitCompare,
@@ -9,7 +11,9 @@ import {
   History,
   LayoutDashboard,
   ListChecks,
+  ScanSearch,
   Search,
+  Send,
   ShieldCheck,
   Users,
   Waypoints,
@@ -21,6 +25,9 @@ import InViewVideo, { VideoWithScrubber } from "./InViewVideo";
 import ScaleToFit from "./ScaleToFit";
 import AtlasSlideVisual, { type AtlasVisual } from "./AtlasSlideVisual";
 import Typewriter from "./Typewriter";
+import AtlasLiveAsk from "./AtlasLiveAsk";
+import AtlasLiveNotify from "./AtlasLiveNotify";
+import { AtlasLiveDocs, AtlasLiveJour, AtlasLiveRelance } from "./AtlasLiveScenes";
 
 /**
  * AtlasShowcase — la section Atlas, refondue le 2026-08-14 pour qu'ATLAS SOIT
@@ -242,11 +249,56 @@ const ATLAS_CAPS: {
     },
   },
   {
-    icon: History,
-    label: { fr: "Garde le journal de chaque geste", en: "Keeps a log of every action" },
+    /* ⚠ CETTE ENTRÉE A CHANGÉ DE SUJET le 2026-08-22, sur demande explicite du
+       client : « au lieu de Garde le journal de chaque geste, je veux plutôt
+       quelque chose comme notification d'information réglementaire ou autres
+       impactant le dossier client ». Le journal n'a pas disparu du site — il
+       vit toujours dans les usages (« Atlas garde le journal », scène
+       traçabilité) et dans les panneaux — il a cédé SA PLACE DANS CETTE LISTE
+       à la veille qui notifie.
+       ⚠ C'est une promesse produit INTRODUITE PAR LE CLIENT, pas reformulée
+       depuis le site : elle n'existait nulle part ailleurs avant cette
+       demande. La description reste prudente — elle cite des TYPES
+       d'événements (échéance, information réglementaire), aucun texte de loi,
+       aucune date. */
+    icon: Bell,
+    label: { fr: "Signale ce qui impacte un dossier", en: "Flags what impacts a file" },
     desc: {
-      fr: "Qui a lancé quoi, quand, et sur quelle version. Le même dossier se rejoue à l'identique.",
-      en: "Who ran what, when, and on which version. The same file replays identically.",
+      fr: "Information réglementaire, échéance, pièce ajoutée : la notification arrive, le dossier client concerné avec elle.",
+      en: "A regulatory update, a deadline, a new document: the notification lands, with the client file concerned.",
+    },
+  },
+  /* ⚠ TROIS CAPACITÉS AJOUTÉES le 2026-08-23 (client, capture du hub du
+     logiciel à l'appui : « mets des caractéristiques d'ici qui sont plus
+     pertinentes, ne remplace pas celles déjà présentes, et crée pour chacune
+     une animation »). Les textes reprennent QUASI MOT POUR MOT les tuiles du
+     vrai logiciel — c'est la copie produit du client, pas une rédaction :
+     « Analyser un document », « Relances de pièces », « Ma journée ».
+     « Veille du millésime » n'a pas été reprise : « Signale ce qui impacte un
+     dossier » couvre déjà ce terrain, la doubler ferait deux entrées pour la
+     même promesse. « Ne sort jamais de chez vous » reste la fermeture. */
+  {
+    icon: ScanSearch,
+    label: { fr: "Lit les documents qu'on lui dépose", en: "Reads the documents you drop in" },
+    desc: {
+      fr: "Une plaquette ou un dossier déposé : soldes, points clés et pistes de mission se lisent immédiatement.",
+      en: "Drop in a brochure or a file: balances, key points and engagement leads read out immediately.",
+    },
+  },
+  {
+    icon: Send,
+    label: { fr: "Relance les pièces manquantes", en: "Chases missing documents" },
+    desc: {
+      fr: "Qui doit quoi, pour quand : les pièces manquantes sont relancées avant qu'elles ne bloquent.",
+      en: "Who owes what, by when: missing documents are chased before they block the file.",
+    },
+  },
+  {
+    icon: CalendarCheck,
+    label: { fr: "Prépare votre journée", en: "Prepares your day" },
+    desc: {
+      fr: "Échéances en retard et du jour, dossiers dormants, échecs à reprendre : le point, chaque matin.",
+      en: "Overdue and today's deadlines, dormant files, failures to retry: the rundown, every morning.",
     },
   },
   {
@@ -432,32 +484,13 @@ const USE_CASES: UseCase[] = [
   },
 ];
 
-/**
- * ⚠ INTERRUPTEUR TEMPORAIRE : LA COLONNE RÉSERVÉE DU BLOC « ATLAS EN CLAIR ».
- *
- * `true` en développement, `false` dans tout build. Client 2026-08-21 : « fais
- * en sorte que cette partie prenne la largeur pour la version qu'on pousse
- * maintenant, mais garde-la comme elle est actuellement pour le localhost ».
- *
- * Ce qu'il commande :
- *   · en DEV  — deux colonnes, la droite vide, filet de séparation. C'est
- *     l'emplacement réservé au visuel à venir, gardé visible pour travailler ;
- *   · en PROD — une seule colonne pleine largeur, la liste des capacités en
- *     grille de deux ou trois colonnes. Aucun visiteur ne voit de demi-page
- *     vide.
- *
- * ⚠ CE QUE CELA COÛTE, ET QU'IL FAUT AVOIR EN TÊTE : ce qu'on voit sous
- * `npm run dev` n'est PAS ce qui est déployé. La mise en page de production ne
- * peut être vérifiée qu'avec `npm run build && npm run preview`. Un défaut qui
- * n'existerait que dans la branche production traverserait tout le
- * développement sans être vu.
- *
- * ⚠ ET CE N'EST PAS UN RÉGLAGE DURABLE. Le jour où le visuel de droite existe,
- * il faut SUPPRIMER cette constante et ses deux branches, pas en ajouter une
- * troisième. Trois chemins de rendu pour un même bloc, c'est le début d'une
- * section que plus personne n'ose toucher.
- */
-const RESERVE_VISUAL = import.meta.env.DEV;
+/* `RESERVE_VISUAL` vivait ici : l'interrupteur dev / production posé le
+   2026-08-21 pour que la moitié droite du bloc « Atlas en clair », alors vide,
+   ne s'affiche qu'en local (« garde-la comme elle est pour le localhost »).
+   SUPPRIMÉ le 2026-08-22, comme son pavé l'exigeait : le visuel attendu existe
+   (AtlasLiveAsk, l'animation façon DataSnipper), la colonne est donc montée
+   partout et les deux mises en page n'ont plus de raison d'être. Ce qu'on voit
+   sous `npm run dev` est de nouveau ce qui est déployé. */
 
 /* `NOISE` et `TILE_ART` vivaient ici : le grain en data-URI et les six dégradés
    qui habillaient les tuiles abstraites de la première version de la grille.
@@ -537,6 +570,73 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
     offset: ["start end", "start center"],
   });
   const riseY = useTransform(riseProgress, [0, 1], [88, 0]);
+
+  /* ── L'ENCADRÉ DES CAPACITÉS, PILOTÉ AU DÉFILEMENT ────────────────────────
+   * Client 2026-08-22 : « l'écran est figé au scroll, et c'est l'encadré qui
+   * entoure la partie de gauche qui descend au scroll, les animations de
+   * droite qui changent. Pour l'instant travaille uniquement sur l'encadré. »
+   *
+   * Le bloc « Atlas en clair » devient une SCÈNE ÉPINGLÉE : la section fait
+   * 300 vh, son contenu est `sticky` en haut d'écran, et les 200 vh de course
+   * se découpent en cinq segments — un par capacité. Le cadre lumineux glisse
+   * d'une entrée à l'autre au fil du défilement.
+   *
+   * ⚠ ÉPINGLAGE PAR `position: sticky` NU, PAS PAR LE MOTEUR DE LA PLANÈTE.
+   * Ce fichier porte déjà une scène épinglée artisanale (la planète, avec son
+   * cadenceur rAF), et son pavé documente sa fragilité. Ici rien de tout ça :
+   * un sticky de base, un `useScroll` de Framer pour l'index, et c'est tout.
+   * Les deux mécanismes ne partagent aucun état.
+   *
+   * ⚠ ÉPINGLÉ SUR md+ SEULEMENT. Sur téléphone, la colonne d'animations est
+   * masquée : épingler une liste de texte seule pendant 200 vh serait du
+   * défilement volé sans contrepartie. Le rail ne prend sa hauteur qu'à
+   * partir de md, en dessous la section défile normalement.
+   *
+   * L'ENCADRÉ EST MESURÉ, PAS CALCULÉ : à chaque changement d'index (et à
+   * chaque redimensionnement, via ResizeObserver), on relit `offsetTop` et
+   * `offsetHeight` de l'entrée active. Les cinq entrées n'ont pas la même
+   * hauteur — leurs descriptions font une ou deux lignes selon la langue — et
+   * un pas fixe dériverait dès la deuxième. La transition CSS (380 ms,
+   * expo-out maison) fait le glissement d'une position mesurée à l'autre.
+   *
+   * `activeCap` est aussi ce qui pilotera les animations de droite : une par
+   * capacité, à venir — c'est la moitié « pour l'instant » de la demande. */
+  const capTrackRef = useRef<HTMLElement>(null);
+  const capListRef = useRef<HTMLUListElement>(null);
+  const [activeCap, setActiveCap] = useState(0);
+  const [capFrame, setCapFrame] = useState({ top: 0, height: 0 });
+  const { scrollYProgress: capProgress } = useScroll({
+    target: capTrackRef,
+    offset: ["start start", "end end"],
+  });
+  useEffect(
+    () =>
+      capProgress.on("change", (v) => {
+        setActiveCap(
+          Math.max(0, Math.min(ATLAS_CAPS.length - 1, Math.floor(v * ATLAS_CAPS.length))),
+        );
+      }),
+    [capProgress],
+  );
+  useEffect(() => {
+    const ul = capListRef.current;
+    if (!ul) return;
+    const mesure = () => {
+      /* ⚠ `querySelectorAll("li")` ET SURTOUT PAS `ul.children[activeCap]` :
+         l'encadré est LUI-MÊME le premier enfant de la liste, `children[0]`
+         serait donc le cadre et tout serait décalé d'une entrée — c'était le
+         bug du premier jet, le cadre s'alignait sur l'argument précédent (et
+         se mesurait lui-même à l'index 0, d'où un cadre de 14 px). */
+      const li = ul.querySelectorAll("li")[activeCap] as HTMLElement | undefined;
+      // 6 px de débord vertical : l'encadré respire autour de l'entrée au
+      // lieu d'en épouser le filet supérieur.
+      if (li) setCapFrame({ top: li.offsetTop - 6, height: li.offsetHeight + 12 });
+    };
+    mesure();
+    const ro = new ResizeObserver(mesure);
+    ro.observe(ul);
+    return () => ro.disconnect();
+  }, [activeCap]);
 
   useEffect(() => {
     const wrap = skyWrapRef.current;
@@ -813,42 +913,35 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
           Le fond reste NOIR, dans la continuité de la scène de la planète
           au-dessus et de la vidéo en dessous : les trois blocs se lisent comme
           une seule surface depuis le 2026-08-15. */}
+      {/* LE RAIL D'ÉPINGLAGE : 360 vh sur md+ (100 d'écran + 260 de course,
+          soit ~32 vh de défilement par capacité, huit capacités depuis le
+          2026-08-23), hauteur libre sur téléphone où rien n'est épinglé.
+          Voir le pavé de `capTrackRef` en tête de composant. */}
       <section
+        ref={capTrackRef}
         data-nav-dark
         data-nav-shy
-        className="relative z-[20] bg-black"
+        className="relative z-[20] bg-black md:h-[360vh]"
       >
-        {/* ══ ⚠ DEUX MISES EN PAGE, SELON QU'ON EST EN DEV OU EN PRODUCTION ══
-            Client 2026-08-21 : « fais en sorte que cette partie prenne la
-            largeur pour la version qu'on pousse maintenant, mais garde-la comme
-            elle est actuellement pour le localhost ».
-
-            La raison est bonne : la moitié droite est un EMPLACEMENT RÉSERVÉ
-            pour un visuel qui n'existe pas encore. On veut continuer à le voir
-            en travaillant, et ne pas exposer une demi-page vide aux visiteurs.
-
-            ⚠ MAIS C'EST UNE DIVERGENCE DEV / PROD, ET IL FAUT LA TRAITER COMME
-            TELLE. Ce qu'on voit en local n'est PAS ce qui est déployé : la mise
-            en page pleine largeur ne peut donc être vérifiée qu'en construisant
-            (`npm run build && npm run preview`), jamais avec `npm run dev`. Un
-            défaut qui n'existerait que dans la branche production passerait
-            inaperçu pendant tout le développement.
-            C'est un ARRANGEMENT TEMPORAIRE. Le jour où le visuel de droite
-            existe, il faut supprimer `RESERVE_VISUAL` et ses deux branches, pas
-            en ajouter une troisième.
-
-            `import.meta.env.DEV` vaut true sous `npm run dev` et false dans
-            tout ce qui sort de `npm run build` — donc aussi sous `npm run
-            preview`, qui sert le build. C'est exactement la coupure voulue. */}
-        <div
-          className={
-            RESERVE_VISUAL
-              ? "mx-auto grid w-full max-w-7xl grid-cols-1 border-white/[0.10] md:grid-cols-2 md:border-x lg:grid-cols-[1fr_1.05fr]"
-              : "mx-auto w-full max-w-7xl border-white/[0.10] md:border-x"
-          }
-        >
-          {/* ── LA MOITIÉ GAUCHE : le propos ─────────────────────────────── */}
-          <div className="px-6 pb-16 pt-20 md:px-10 md:pb-24 md:pt-28 lg:px-14">
+        {/* L'ÉCRAN FIGÉ : sticky nu, contenu centré verticalement. `h-screen`
+            et non `min-h-screen` — la boîte épinglée doit faire exactement un
+            écran, c'est le contenu qui se centre dedans. */}
+        <div className="md:sticky md:top-0 md:flex md:h-screen md:flex-col md:justify-center">
+        {/* Les DEUX mises en page dev / production (RESERVE_VISUAL) ont vécu
+            ici du 21 au 22 août, le temps que le visuel de droite existe.
+            Retour à un seul chemin de rendu : deux colonnes, partout. */}
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 border-white/[0.10] md:grid-cols-2 md:border-x lg:grid-cols-[1fr_1.05fr]">
+          {/* ── LA MOITIÉ GAUCHE : le propos ───────────────────────────────
+              Les pas verticaux tombent à md : le centrage vertical de l'écran
+              épinglé fait le travail que faisaient pt-28 / pb-24 en flux.
+              ⚠ TOUT EST COMPACTÉ D'UN CRAN sur md (py-8, liste mt-10, entrées
+              py-[18px]) : mesuré à 900 px de haut, la colonne en cadence de
+              flux faisait ~1 130 px — le titre passait sous la barre de
+              navigation et la cinquième entrée sortait de l'écran. Une scène
+              épinglée doit tenir ENTIÈRE dans l'écran qui la fige, c'est tout
+              son contrat. Le pt-16 asymétrique laisse la place de la barre de
+              navigation, fixe par-dessus. */}
+          <div className="px-6 pb-16 pt-20 md:px-10 md:pb-8 md:pt-16 lg:px-14">
             {/* La pastille. Bleu de la charte à faible opacité sur le noir,
                 le seul accent de tout le bloc. */}
             <span className="inline-flex items-center rounded-[7px] bg-[#3b82f6]/[0.16] px-2.5 py-1 font-inter text-[12.5px] font-semibold tracking-[-0.01em] text-[#8ab4fa]">
@@ -859,7 +952,12 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
                 déjà validée de la scène d'ouverture (« Atlas est l'assistant
                 qui connaît vos dossiers ») ; la seconde, en gris, dit ce qui en
                 découle. Rien de neuf n'est promis ici. */}
-            <h2 className="mt-6 font-instrument text-[clamp(2.1rem,4vw,3.4rem)] font-normal leading-[1.06] tracking-[-0.03em]">
+            {/* ⚠ LE CORPS DU TITRE EST DESCENDU (3,4 → 2,7 rem au plafond) le
+                2026-08-22, en même temps que l'épinglage : à 3,4 rem le titre
+                seul mangeait 173 px et la colonne débordait de l'écran figé
+                des deux côtés, mesuré. C'est le prix de la scène épinglée — un
+                écran figé doit contenir tout son propos. */}
+            <h2 className="mt-6 font-instrument text-[clamp(2rem,2.9vw,2.7rem)] font-normal leading-[1.06] tracking-[-0.03em] md:mt-5">
               <span className="text-white">
                 {t({
                   fr: "L'assistant qui connaît vos dossiers.",
@@ -881,7 +979,7 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
             <button
               type="button"
               onClick={openBooking}
-              className="group mt-9 inline-flex items-center gap-2.5 rounded-full border border-white/25 px-5 py-2.5 font-inter text-[14px] font-semibold text-white transition-colors duration-150 hover:border-white/50 hover:bg-white/[0.06]"
+              className="group mt-9 inline-flex items-center gap-2.5 rounded-full border border-white/25 px-5 py-2.5 font-inter text-[14px] font-semibold text-white transition-colors duration-150 hover:border-white/50 hover:bg-white/[0.06] md:mt-6"
             >
               {t({ fr: "Réserver un appel", en: "Book a call" })}
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
@@ -896,44 +994,74 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
                 titre (`mt-0.5`) et non centrée sur le bloc : les descriptions
                 font une ou deux lignes selon la langue, un centrage ferait
                 danser les icônes d'une entrée à l'autre. */}
-            {/* EN PLEINE LARGEUR, la liste passe en GRILLE : cinq entrées
-                empilées sur 1 280 px laisseraient les trois quarts de la ligne
-                vides, ce qui est le défaut même qu'on cherche à corriger. Deux
-                colonnes à partir de sm, trois à partir de lg — cinq entrées y
-                font trois puis deux, la rangée incomplète se lit comme une
-                grille et non comme un trou.
-                En mode réservé, la colonne fait la moitié de la page : la liste
-                simple reste la bonne forme. */}
-            <ul
-              className={
-                RESERVE_VISUAL
-                  ? "mt-14 md:mt-16"
-                  : "mt-14 grid gap-x-10 sm:grid-cols-2 md:mt-16 lg:grid-cols-3 lg:gap-x-14"
-              }
-            >
-              {ATLAS_CAPS.map((c) => {
+            {/* `relative` : l'encadré actif est positionné dans le repère de
+                cette liste, aux coordonnées mesurées de l'entrée courante. */}
+            <ul ref={capListRef} className="relative mt-14 md:mt-8">
+              {/* ── L'ENCADRÉ ACTIF ──────────────────────────────────────────
+                  Un seul élément, qui GLISSE d'une entrée à l'autre (la
+                  transition porte sur top et height) plutôt que cinq encadrés
+                  qui s'allument : c'est le mouvement qui dit « on est passé à
+                  l'argument suivant ». Débord horizontal de 16 px pour ne pas
+                  coller au texte ; caché sous md, où rien n'est épinglé. */}
+              {/* ⚠ SUR RESSORT depuis le 2026-08-22 (client : « les déplacements
+                  d'encadré doivent être plus fluides, smooth et nets ») : la
+                  transition CSS sur top/height donnait un glissement correct
+                  mais sec — un ressort Framer (raideur 380, amortissement 36,
+                  quasi sans dépassement) suit le défilement avec l'inertie
+                  d'un objet qui pèse, et s'arrête net sans osciller. */}
+              <motion.span
+                aria-hidden
+                className="pointer-events-none absolute -left-4 -right-4 hidden rounded-[14px] border border-white/[0.22] bg-white/[0.04] md:block"
+                animate={{ top: capFrame.top, height: capFrame.height }}
+                transition={{ type: "spring", stiffness: 380, damping: 36, mass: 0.9 }}
+              />
+              {/* ⚠ LA LISTE EST EN ACCORDÉON SUR L'ÉCRAN ÉPINGLÉ (2026-08-23) :
+                  seule l'entrée ACTIVE déploie sa description, les autres ne
+                  montrent que leur titre. Ce n'est pas un choix de style, c'est
+                  LA condition de l'ajout des trois capacités : huit entrées à
+                  descriptions ouvertes font ~990 px, l'écran épinglé en offre
+                  900 — le contrat « tout le propos tient dans l'écran » sautait.
+                  Repliées, les huit tiennent large, et le dépliement suit
+                  l'encadré (le ResizeObserver du cadre remesure tout seul).
+                  Sur téléphone, PAS d'accordéon : rien n'y est épinglé, toutes
+                  les descriptions restent ouvertes — d'où les deux <p>, l'un
+                  `md:hidden` (toujours ouvert), l'autre animé sur md. */}
+              {ATLAS_CAPS.map((c, i) => {
                 const Icon = c.icon;
+                const ouverte = i === activeCap;
                 return (
                   <li
                     key={c.label.en}
-                    className={
-                      RESERVE_VISUAL
-                        ? "flex gap-4 border-t border-white/[0.10] py-6 first:border-t-0 first:pt-0 last:pb-0"
-                        : "flex gap-4 border-t border-white/[0.10] py-6"
-                    }
+                    className="flex gap-4 border-t border-white/[0.10] py-6 first:border-t-0 first:pt-0 last:pb-0 md:py-[13px] md:last:pb-[13px]"
                   >
                     <Icon
                       aria-hidden
-                      className="mt-0.5 h-[18px] w-[18px] shrink-0 text-white/45"
+                      className={`mt-0.5 h-[18px] w-[18px] shrink-0 transition-colors duration-300 ${
+                        ouverte ? "md:text-white/80 text-white/45" : "text-white/45"
+                      }`}
                       strokeWidth={1.6}
                     />
-                    <div className="min-w-0">
-                      <h3 className="font-inter text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-white md:text-[16.5px]">
+                    <div className="min-w-0 flex-1">
+                      <h3
+                        className={`font-inter text-[15.5px] font-semibold leading-snug tracking-[-0.01em] transition-colors duration-300 md:text-[16px] ${
+                          ouverte ? "text-white" : "text-white md:text-white/60"
+                        }`}
+                      >
                         {t(c.label)}
                       </h3>
-                      <p className="mt-2 max-w-[46ch] font-inter text-[14px] leading-[1.55] text-white/45">
+                      <p className="mt-2 max-w-[46ch] font-inter text-[14px] leading-[1.55] text-white/45 md:hidden">
                         {t(c.desc)}
                       </p>
+                      <motion.div
+                        className="hidden overflow-hidden md:block"
+                        initial={false}
+                        animate={{ height: ouverte ? "auto" : 0, opacity: ouverte ? 1 : 0 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.9 }}
+                      >
+                        <p className="mt-1.5 max-w-[46ch] pb-0.5 font-inter text-[13.5px] leading-[1.45] text-white/45">
+                          {t(c.desc)}
+                        </p>
+                      </motion.div>
                     </div>
                   </li>
                 );
@@ -941,20 +1069,103 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
             </ul>
           </div>
 
-          {/* ── LA MOITIÉ DROITE : RÉSERVÉE, VOLONTAIREMENT VIDE ───────────
-              Client 2026-08-20 : « n'essaie pas de répliquer leur animation à
-              droite, laisse un espace blanc, on verra ce qu'on met dedans ».
-              Ne rien mettre ici est la consigne, pas un oubli : c'est
-              l'emplacement du visuel à venir.
-              ⚠ EN DÉVELOPPEMENT SEULEMENT depuis le 2026-08-21 — en production
-              la section prend toute la largeur et cette colonne n'existe pas.
-              C'est ici qu'ira le visuel, et c'est en le posant qu'il faudra
-              supprimer `RESERVE_VISUAL` et ses deux branches.
-              `hidden md:block` : sur téléphone les deux colonnes s'empilent, et
-              une zone vide de 500 px sous la liste se lirait comme un bug. */}
-          {RESERVE_VISUAL && (
-            <div aria-hidden className="hidden border-l border-white/[0.10] md:block" />
-          )}
+          {/* ── LA MOITIÉ DROITE : L'ANIMATION DE L'ARGUMENT ACTIF ──────────
+              L'emplacement réservé du 2026-08-20 reçoit ses visuels : la boucle
+              AtlasLiveAsk (question tapée → étapes → résultat, façon
+              DataSnipper), et depuis le 2026-08-22 la PREMIÈRE animation par
+              argument — AtlasLiveNotify, le flux de notifications, qui prend
+              l'écran quand l'encadré de gauche est sur « Signale ce qui
+              impacte un dossier » (activeCap === 3).
+              Les deux vivent dans la même cellule de grille et se croisent en
+              fondu de 500 ms ; la scène masquée reçoit `active={false}` et
+              coupe ses minuteurs — pas de boucle qui mouline en coulisse.
+              Les trois autres arguments montrent la boucle AtlasLiveAsk en
+              attendant leurs propres scènes.
+              `hidden md:grid` : sur téléphone les deux colonnes s'empilent, et
+              une simulation en boucle sous la liste allongerait l'écran pour un
+              décor. */}
+          {/* ⚠ CINQ ANIMATIONS depuis le 2026-08-23, une par famille
+              d'arguments, toutes dans la même cellule et croisées en fondu de
+              350 ms. La carte des correspondances :
+                0-2 (chercher, relier, valider) → la boucle AtlasLiveAsk ;
+                3 (signale)                     → le flux AtlasLiveNotify ;
+                4 (lit les documents)          → AtlasLiveDocs ;
+                5 (relance les pièces)         → AtlasLiveRelance ;
+                6 (prépare la journée)         → AtlasLiveJour ;
+                7 (ne sort jamais)             → la boucle AtlasLiveAsk, qui
+                  finit sur le dossier ouvert — l'écran le plus « chez vous »
+                  des cinq, à défaut d'une scène dédiée à la confidentialité.
+              Chaque scène masquée reçoit `active={false}` : minuteurs coupés,
+              reprise à zéro au retour. */}
+          <div className="hidden border-l border-white/[0.10] md:grid md:items-center md:px-8 md:py-16 lg:px-12">
+            <div className="relative grid">
+              {/* LE DÉCOR, UNIQUE ET PARTAGÉ (2026-08-23) : il vivait dans
+                  AtlasLiveAsk et disparaissait donc avec elle à chaque bascule
+                  d'argument — le fond clignotait. Posé ICI, derrière les cinq
+                  scènes, il ne bouge plus jamais : les cartes se croisent sur
+                  un fond stable, et c'est ce qui rend les bascules douces. */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-x-6 -inset-y-10"
+                style={{
+                  background:
+                    "radial-gradient(55% 45% at 72% 22%, rgba(13,148,136,0.12) 0%, transparent 68%), radial-gradient(50% 42% at 22% 78%, rgba(59,130,246,0.10) 0%, transparent 66%), linear-gradient(115deg, transparent 48%, rgba(255,255,255,0.02) 48%)",
+                }}
+              />
+              {/* ⚠ UNE SEULE SCÈNE MONTÉE, CLÉE SUR L'ARGUMENT (2026-08-23,
+                  client : « crée une distinction entre passage d'animation en
+                  animation ») : à CHAQUE changement d'encadré — même entre deux
+                  arguments servis par la même boucle — la scène sortante glisse
+                  et s'éteint, l'entrante monte en ressort, et le remontage
+                  remet l'état à zéro sans mécanique supplémentaire. L'ancienne
+                  pile de cinq scènes en opacité ne marquait RIEN entre les
+                  arguments 0, 1, 2 et 7. Le décor, lui, reste posé derrière :
+                  c'est lui qui donne la continuité pendant que les scènes
+                  changent. */}
+              <AnimatePresence>
+                {/* L'ENTRÉE CHANGE DE DIRECTION avec l'argument (bas, droite,
+                    gauche, en rotation) : deux scènes consécutives n'arrivent
+                    jamais du même côté — seconde moitié du correctif « deux
+                    animations de suite ne doivent pas commencer pareil ». */}
+                <motion.div
+                  key={activeCap}
+                  initial={{
+                    opacity: 0,
+                    scale: 0.97,
+                    x: [0, 44, -44][activeCap % 3],
+                    y: activeCap % 3 === 0 ? 26 : 8,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                    y: 0,
+                    scale: 1,
+                    transition: { type: "spring", stiffness: 380, damping: 32, mass: 0.9 },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    y: -20,
+                    scale: 0.985,
+                    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
+                  }}
+                  className="col-start-1 row-start-1 self-center"
+                >
+                  {activeCap === 3 ? (
+                    <AtlasLiveNotify />
+                  ) : activeCap === 4 ? (
+                    <AtlasLiveDocs />
+                  ) : activeCap === 5 ? (
+                    <AtlasLiveRelance />
+                  ) : activeCap === 6 ? (
+                    <AtlasLiveJour />
+                  ) : (
+                    <AtlasLiveAsk variante={activeCap} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
         </div>
       </section>
 
@@ -985,10 +1196,14 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
           de largeur un jour, celle-ci doit suivre.
           Le pas au-dessus est retombé de pt-24 à pt-16 : à 720 px de haut, la
           vidéo ne tient plus dans une fenêtre de portable avec l'ancien blanc. */}
+      {/* Le pas du haut est remonté de pt-16 à pt-28 le 2026-08-22 (client :
+          « fais un plus grand espace entre cette partie et celle juste en
+          dessous ») : l'animation AtlasLiveAsk vit désormais au-dessus, elle a
+          besoin d'air avant que la vidéo n'enchaîne. */}
       <section
         data-nav-dark
         data-nav-shy
-        className="relative z-[20] bg-black px-6 md:px-12 pt-12 md:pt-16 pb-2 md:pb-4"
+        className="relative z-[20] bg-black px-6 md:px-12 pt-20 md:pt-28 pb-2 md:pb-4"
       >
         <div className="mx-auto w-full max-w-7xl">
           <VideoWithScrubber
