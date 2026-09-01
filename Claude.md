@@ -381,6 +381,31 @@ Book a Call button? there is already a button for it ») : le bureau ne porte
 pas d'équivalent à cet endroit, et la prise de rendez-vous reste atteignable
 par la barre de navigation et par le CTA de fin de page.
 
+**⚠ AVANT DE TRANCHER UN CONFLIT « main contre la branche », REGARDER LA BASE
+DE FUSION.** La règle « une décision du client portée par main prime un choix
+de style de cette branche » a servi trois fois, et la troisième elle a failli
+faire l'inverse de ce qu'il fallait. À la fusion nº 42, git a signalé un
+conflit entre le `md:grid-cols-*` de main et le `grid-cols-*` sans préfixe de
+la branche sur les trois rangées « texte + maquette ». Prendre le côté de main,
+comme les deux fois précédentes, aurait annulé la demande expresse du client du
+23/08 (le côte à côte). Or `git diff <base> origin/main` sur ces lignes montrait
+que main n'y avait changé QUE la marge (`mt-9 md:mt-11` → `mt-14 md:mt-20`) :
+les préfixes `md:` étaient inchangés depuis la base. main n'avait rien arbitré ;
+git ne signalait un conflit que parce que les deux modifications tombaient sur
+la même ligne.
+**Un conflit git n'est pas une opposition de décisions.** Tant qu'on n'a pas
+comparé les deux côtés à la BASE, on ne sait pas lequel a décidé quoi — ni même
+si quelqu'un a décidé. Le côté d'en face peut n'être que l'état d'avant.
+
+**Quand deux décisions client portent sur des choses différentes, elles se
+composent — on n'en sacrifie pas une.** Toujours à la fusion nº 42, l'appel du
+hero mobile : main en change la DESTINATION (26/08, le lien vers la web app est
+retiré du site entier), la branche en tient la GÉOMÉTRIE (23/08, « bien plus
+petit et discret »). Aucune des deux ne parle de l'autre. Résultat : le bouton
+de main, à la taille de la branche. Le bloc de 52 px que portait main n'était
+pas une re-décision contre le 23/08, c'était l'état d'avant — même piège que
+ci-dessus.
+
 **La rangée de preuve sous le bouton est EMPILÉE, et c'est un second renvoi**
 (fusion de `main`, PR nº 41, 2026-08-26). Trois mentions en colonne, corps de
 13,5 px : « Hébergé en Europe, hors CLOUD Act », « Chiffré sur votre appareil »,
