@@ -269,13 +269,13 @@ const FILE_CHIPS = [
  *  the cards; the monday-style header above uses the bare chips row). */
 export function FileChipStrip({ withOrigin = false }: { withOrigin?: boolean }) {
   return (
-    <div className="flex items-center gap-3 md:gap-4">
+    <div className="flex items-center gap-2 xs:gap-3 md:gap-4">
       {withOrigin && (
         <>
-          <span className="flex h-11 w-11 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-white dark:bg-white/[0.09] ring-1 ring-black/[0.06] dark:ring-white/[0.08] shadow-sm">
-            <img src="/logos/icon-color.png" alt="" aria-hidden className="h-5 w-auto md:h-6" />
+          <span className="flex h-8 w-8 xs:h-11 xs:w-11 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-white dark:bg-white/[0.09] ring-1 ring-black/[0.06] dark:ring-white/[0.08] shadow-sm">
+            <img src="/logos/icon-color.png" alt="" aria-hidden className="h-3.5 w-auto xs:h-5 md:h-6" />
           </span>
-          <MoveRight className="h-6 w-6 shrink-0 text-gray-900 dark:text-white" strokeWidth={1.5} />
+          <MoveRight className="h-4 w-4 xs:h-6 xs:w-6 shrink-0 text-gray-900 dark:text-white" strokeWidth={1.5} />
         </>
       )}
       <div className="flex -space-x-1.5">
@@ -284,13 +284,13 @@ export function FileChipStrip({ withOrigin = false }: { withOrigin?: boolean }) 
             key={c.alt}
             // Chips stay WHITE in dark mode too: the logo files are JPGs on a
             // white background, so a white chip makes them blend seamlessly.
-            className="flex h-11 w-11 md:h-12 md:w-12 items-center justify-center overflow-hidden rounded-full bg-white dark:bg-white ring-1 ring-black/[0.06] dark:ring-white/[0.12] shadow-sm"
+            className="flex h-8 w-8 xs:h-11 xs:w-11 md:h-12 md:w-12 items-center justify-center overflow-hidden rounded-full bg-white dark:bg-white ring-1 ring-black/[0.06] dark:ring-white/[0.12] shadow-sm"
           >
             <img src={c.src} alt={c.alt} className={`${c.imgCls} object-contain`} />
           </span>
         ))}
-        <span className="flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-white/70 dark:bg-white/[0.05] ring-1 ring-black/[0.06] dark:ring-white/[0.08]">
-          <Plus className="h-[18px] w-[18px] text-gray-500 dark:text-gray-400" strokeWidth={1.8} />
+        <span className="flex h-8 w-8 xs:h-11 xs:w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-white/70 dark:bg-white/[0.05] ring-1 ring-black/[0.06] dark:ring-white/[0.08]">
+          <Plus className="h-3.5 w-3.5 xs:h-[18px] xs:w-[18px] text-gray-500 dark:text-gray-400" strokeWidth={1.8} />
         </span>
       </div>
     </div>

@@ -118,7 +118,7 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section
-        className="relative overflow-hidden pt-28 pb-28 md:pt-36 md:pb-36 px-6 lg:px-10"
+        className="relative overflow-hidden pt-20 pb-12 md:pt-36 md:pb-36 px-5 lg:px-10"
         style={{ background: dk ? "#020617" : "#fefefe" }}
       >
         {/* Background glow */}
@@ -135,7 +135,7 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid gap-6 lg:grid-cols-2 lg:gap-16 items-center">
 
             {/* ── Left: copy ───────────────────────────────────── */}
             <div className="max-w-[520px]">
@@ -150,7 +150,7 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
               </div>
 
               <h1
-                className={`biz-stagger biz-d2 text-[clamp(2.2rem,4.5vw,3.6rem)] font-light leading-[1.08] tracking-[-0.03em] ${
+                className={`biz-stagger biz-d2 text-[clamp(1.7rem,4.5vw,3.6rem)] font-light leading-[1.08] tracking-[-0.03em] ${
                   dk ? "text-white" : "text-black"
                 }`}
               >
@@ -161,7 +161,7 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
               </h1>
 
               <p
-                className={`biz-stagger biz-d3 mt-6 text-[clamp(1rem,1.7vw,1.1rem)] leading-[1.75] ${
+                className={`biz-stagger biz-d3 mt-5 md:mt-6 text-[clamp(0.95rem,1.7vw,1.1rem)] leading-[1.7] md:leading-[1.75] ${
                   dk ? "text-gray-400" : "text-gray-500"
                 }`}
               >
@@ -233,7 +233,7 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
 
       {/* ── Benefits ──────────────────────────────────────────────── */}
       <section
-        className="py-24 md:py-32 px-6 lg:px-10"
+        className="py-16 md:py-32 px-5 lg:px-10"
         style={{ background: dk ? "#020617" : "#ffffff" }}
       >
         <div className="max-w-7xl mx-auto">
@@ -256,22 +256,22 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
             {benefits.map((b, i) => {
               const Icon = b.icon;
               return (
                 <div
                   key={i}
-                  className={`biz-card p-8 rounded-[24px] border ${
+                  className={`biz-card p-4 rounded-[16px] border md:p-8 md:rounded-[24px] ${
                     dk
                       ? "bg-white/[0.025] border-white/[0.07]"
                       : "bg-gray-50/80 border-gray-100"
                   }`}
                   data-delay={String(i * 100)}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col items-start gap-2.5 md:flex-row md:gap-4">
                     <div
-                      className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      className={`md:mt-0.5 w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0 md:w-10 md:h-10 md:rounded-xl ${
                         dk ? "bg-blue-500/10" : "bg-blue-50"
                       }`}
                     >
@@ -279,14 +279,14 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
                     </div>
                     <div>
                       <h3
-                        className={`text-[17px] font-semibold tracking-tight leading-snug ${
+                        className={`text-[15px] md:text-[17px] font-semibold tracking-tight leading-snug ${
                           dk ? "text-white" : "text-gray-900"
                         }`}
                       >
                         {b.title}
                       </h3>
                       <p
-                        className={`mt-2 text-[15px] leading-relaxed ${
+                        className={`mt-1.5 md:mt-2 text-[14px] leading-[1.5] md:text-[15px] md:leading-relaxed ${
                           dk ? "text-gray-400" : "text-gray-500"
                         }`}
                       >
@@ -303,12 +303,12 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
 
       {/* ── CTA banner ────────────────────────────────────────────── */}
       <section
-        className="py-24 px-6 lg:px-10"
+        className="py-12 md:py-24 px-5 lg:px-10"
         style={{ background: dk ? "#020617" : "#ffffff" }}
       >
         <div className="max-w-3xl mx-auto text-center">
           <div
-            className={`rounded-[32px] px-10 py-16 border ${
+            className={`rounded-[24px] px-6 py-12 border md:rounded-[32px] md:px-10 md:py-16 ${
               dk
                 ? "bg-white/[0.03] border-white/[0.07]"
                 : "bg-gray-50 border-gray-100"
@@ -334,7 +334,7 @@ export default function ForBusinessPage({ theme, openBooking }: ForBusinessPageP
             <button
               onClick={openBooking}
               className={[
-                "mt-8 group inline-flex items-center gap-2 px-8 py-4 rounded-full text-[15px] font-semibold text-white",
+                "mt-6 md:mt-8 group inline-flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 rounded-full text-[13px] md:text-[15px] font-semibold text-white",
                 "transition-all duration-150 hover:-translate-y-px",
                 "bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600",
                 "shadow-[0_4px_20px_rgba(37,99,235,0.3)]",

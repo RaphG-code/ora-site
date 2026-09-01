@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, FileSpreadsheet, FileText, Gauge, Maximize2, Play, Presentation, RefreshCw, Scale, TrendingUp, X } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import useIsPhone from "@/lib/useIsPhone";
 import ReportingMockup from "./ReportingMockup";
 import PointageMockup from "./PointageMockup";
 import FormatageMockup from "./FormatageMockup";
@@ -1186,6 +1187,11 @@ function Mockup({ kind }: { kind: MockupKind }) {
 
 export default function UseCasesBento({ openBooking }: { openBooking?: () => void }) {
   const { t } = useLang();
+  // Voir la carte « Gagnez des heures » : le rognage à l'échelle 1 est une
+  // composition de BUREAU. Un crochet et non une classe `md:`, parce que les
+  // deux cadres ne diffèrent pas par l'affichage mais par la GÉOMÉTRIE de la
+  // scène, et qu'un `hidden md:block` monterait deux OraAppScene.
+  const phone = useIsPhone();
   const [detail, setDetail] = useState<BentoCase | null>(null);
   // Onglet actif de la carte pleine largeur. Un seul entier : une seule carte
   // en porte, inutile d'en faire une table.
@@ -1880,7 +1886,10 @@ export default function UseCasesBento({ openBooking }: { openBooking?: () => voi
                    droits qui saigne vers les bords bas et droit. */
                 <div className="relative grid md:grid-cols-[1fr_1.8fr] gap-6 md:gap-10 items-center">
                   <h3
-                    className="font-inter font-normal text-[1.5rem] md:text-[1.85rem] tracking-[-0.025em] leading-[1.15] pr-14 md:pr-0"
+                    /* 1,5 rem faisait QUATRE lignes sur 260 px de colonne
+                       utile (pastille d'agrandissement déduite) : le titre
+                       occupait à lui seul le tiers haut de la carte. */
+                    className="font-inter font-normal text-[1.25rem] md:text-[1.85rem] tracking-[-0.025em] leading-[1.15] pr-14 md:pr-0"
                     style={{ color: c.ink ?? INK }}
                   >
                     {c.title}
@@ -1946,7 +1955,7 @@ export default function UseCasesBento({ openBooking }: { openBooking?: () => voi
               ) : (
                 <>
                   <h3
-                    className={`relative font-inter font-normal text-[1.3rem] md:text-[1.5rem] tracking-[-0.025em] leading-[1.15] pr-14 ${c.titleClass ?? ""}`}
+                    className={`relative font-inter font-normal text-[1.15rem] md:text-[1.5rem] tracking-[-0.025em] leading-[1.15] pr-14 ${c.titleClass ?? ""}`}
                     style={{ color: c.ink ?? INK }}
                   >
                     {c.title}
@@ -2036,6 +2045,29 @@ export default function UseCasesBento({ openBooking }: { openBooking?: () => voi
                          « Reprendre ». Elle sert aussi à REMONTER la fenêtre :
                          le bloc visuel est en `mt-auto`, donc plus il est haut,
                          moins il reste de vide entre le titre et lui. */
+                      /* ⚠ DEUX CADRES, PAS DEUX HABILLAGES (2026-08-22).
+                         Le rognage à l'échelle 1 — la fenêtre débordante à la
+                         Stripe — suppose une carte assez large pour qu'il en
+                         reste quelque chose : sur le bureau la carte fait
+                         780 px et laisse voir la moitié gauche du logiciel.
+                         Sur un téléphone la même scène de 1015 px dans une
+                         carte de 350 n'en montrait plus que le TIERS gauche,
+                         mesuré : barre latérale, « Accueil », un morceau de
+                         salutation coupé au milieu d'un mot. Ce n'est plus une
+                         composition, c'est un accident de cadrage — et c'est
+                         exactement ce que le client refuse depuis le 21/08
+                         (« they just won't have their design or the whole
+                         thing to see at once »).
+                         Sous 768 la scène est donc rendue ENTIÈRE, sans
+                         `cropScale` : OraAppScene la fait alors tenir dans son
+                         cadre toute seule. */
+                      phone ? (
+                        <div className="-mx-3 -mb-8">
+                          <div className="aspect-[1180/720] w-full">
+                            <OraAppScene chips="none" />
+                          </div>
+                        </div>
+                      ) : (
                       <div className="-mx-3 md:mx-0 md:ml-[86px] md:-mr-[104px] -mb-8 md:-mb-14">
                         <div className="h-[300px] md:h-[470px]">
                           {/* `chips="in"` : les trois livrables sortants sont
@@ -2044,6 +2076,7 @@ export default function UseCasesBento({ openBooking }: { openBooking?: () => voi
                           <OraAppScene cropScale={0.86} chips="in" />
                         </div>
                       </div>
+                      )
                     ) : c.mockup ? (
                       <div
                         // Les marges NÉGATIVES font déborder la maquette des

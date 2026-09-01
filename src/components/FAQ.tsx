@@ -84,18 +84,18 @@ export default function FAQ() {
   ];
 
   return (
-    <section id="faq" className="relative py-24 md:py-32 px-6 md:px-12 bg-white dark:bg-black md:dark:bg-black scroll-mt-24">
+    <section id="faq" className="relative py-16 md:py-32 px-5 md:px-12 bg-white dark:bg-black md:dark:bg-black scroll-mt-24">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12 md:mb-16">
+        <div className="text-center mb-9 md:mb-16">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-500 dark:text-blue-400">
             {t({ fr: "FAQ", en: "FAQ" })}
           </span>
-          <h2 className="font-poppins font-semibold text-3xl md:text-[2.75rem] tracking-[-0.03em] leading-[1.12] text-[#111827] dark:text-white mt-4">
+          <h2 className="font-poppins font-semibold text-[1.75rem] md:text-[2.75rem] tracking-[-0.03em] leading-[1.12] text-[#111827] dark:text-white mt-3 md:mt-4">
             {t({ fr: "Vos questions, nos réponses", en: "Your questions, answered" })}
           </h2>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5 md:gap-3">
           {items.map((item, i) => {
             const isOpen = open === i;
             return (
@@ -105,16 +105,16 @@ export default function FAQ() {
               >
                 <button
                   onClick={() => setOpen(isOpen ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 text-left px-5 md:px-6 py-4 md:py-5"
+                  className="w-full flex items-center justify-between gap-3 text-left px-5 py-4 md:gap-4 md:px-6 md:py-5"
                   aria-expanded={isOpen}
                   aria-controls={`faq-panel-${i}`}
                   id={`faq-button-${i}`}
                 >
-                  <span className="font-poppins font-semibold text-[15px] md:text-[16px] text-gray-900 dark:text-white">
+                  <span className="font-poppins font-semibold text-[14.5px] max-md:leading-snug md:text-[16px] text-gray-900 dark:text-white">
                     {item.q}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 flex-shrink-0 text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                    className={`w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
                   />
                 </button>
                 {/* ⚠ `inert` SUR LE PANNEAU FERMÉ (audit du 2026-08-15). Le
@@ -136,7 +136,7 @@ export default function FAQ() {
                   style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                 >
                   <div className="overflow-hidden">
-                    <p className="font-inter px-5 md:px-6 pb-5 text-[14.5px] leading-relaxed text-gray-500 dark:text-gray-400">
+                    <p className="font-inter px-5 pb-4 text-[13.5px] leading-relaxed md:px-6 md:pb-5 md:text-[14.5px] text-gray-500 dark:text-gray-400">
                       {item.a}
                     </p>
                   </div>

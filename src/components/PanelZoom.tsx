@@ -86,8 +86,12 @@ export function ZoomButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`grid h-8 w-8 place-items-center rounded-[9px] bg-[#eef3ff] text-[#3b82f6] ring-1 ring-[#3b82f6]/15 transition-colors duration-150 group-hover/panel:bg-[#3b82f6] group-hover/panel:text-white group-hover/panel:ring-[#3b82f6] hover:bg-[#2563eb] hover:text-white hover:ring-[#2563eb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 dark:bg-white/[0.08] dark:text-white/70 dark:ring-white/10 ${
-        inline ? "" : "absolute right-4 top-4 z-20"
+      /* FUSION 2026-08-23 : la pastille `inline` vient de main (PR nº 40), la
+         réduction sur téléphone de cette branche. Les deux se composent sans
+         se gêner — l'une porte le POSITIONNEMENT, l'autre la TAILLE. Le bureau
+         garde ses valeurs au pixel : 32 px, rayon 9, calée à 16 px des bords. */
+      className={`grid h-7 w-7 place-items-center rounded-[8px] bg-[#eef3ff] text-[#3b82f6] ring-1 ring-[#3b82f6]/15 transition-colors duration-150 group-hover/panel:bg-[#3b82f6] group-hover/panel:text-white group-hover/panel:ring-[#3b82f6] hover:bg-[#2563eb] hover:text-white hover:ring-[#2563eb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 md:h-8 md:w-8 md:rounded-[9px] dark:bg-white/[0.08] dark:text-white/70 dark:ring-white/10 ${
+        inline ? "" : "absolute right-2 top-2 z-20 md:right-4 md:top-4"
       }`}
     >
       <ExpandGlyph />

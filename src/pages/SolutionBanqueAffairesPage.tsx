@@ -446,7 +446,7 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
 
       {/* ══ 1. HERO ══ */}
       <section
-        className="relative overflow-hidden pt-28 pb-24 md:pt-36 md:pb-32 px-6 lg:px-10"
+        className="relative overflow-hidden pt-24 pb-14 md:pt-36 md:pb-32 px-5 lg:px-10"
         style={{ background: bg }}
       >
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
@@ -462,7 +462,7 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-center">
+          <div className="grid gap-9 lg:grid-cols-2 lg:gap-12 xl:gap-20 items-center">
             <div className="max-w-[540px]">
               <div
                 className={[
@@ -480,7 +480,7 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
               <h1
                 className={[
                   "ba-stagger ba-d2",
-                  "font-poppins text-[clamp(2rem,4vw,3.4rem)] font-semibold leading-[1.1] tracking-[-0.03em]",
+                  "font-poppins text-[clamp(1.75rem,4vw,3.4rem)] font-semibold leading-[1.1] tracking-[-0.03em]",
                   textPrimary,
                 ].join(" ")}
               >
@@ -491,7 +491,7 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
               <p
                 className={[
                   "ba-stagger ba-d3",
-                  "font-inter mt-6 text-[clamp(0.95rem,1.6vw,1.05rem)] leading-[1.8]",
+                  "font-inter mt-5 md:mt-6 text-[clamp(0.95rem,1.6vw,1.05rem)] leading-[1.7] md:leading-[1.8]",
                   textSecondary,
                 ].join(" ")}
               >
@@ -549,10 +549,10 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
       </section>
 
       {/* ══ 2. SOLUTIONS ══ */}
-      <section className="py-24 md:py-32 px-6 lg:px-10" style={{ background: bgContrast }}>
+      <section className="py-16 md:py-32 px-5 lg:px-10" style={{ background: bgContrast }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 max-w-2xl mx-auto">
-            <h2 className={["font-poppins text-[clamp(1.75rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em]", textPrimary].join(" ")}>
+          <div className="text-center mb-10 md:mb-16 max-w-2xl mx-auto">
+            <h2 className={["font-poppins text-[clamp(1.55rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em]", textPrimary].join(" ")}>
               {t({ fr: "Ce qu'Ora fait pour vous", en: "What Ora does for you" })}
             </h2>
             <p className={["font-inter mt-4 text-[1.05rem] leading-relaxed", textSecondary].join(" ")}>
@@ -563,22 +563,22 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
             {solutions.map((sol, i) => {
               const Icon = sol.icon;
               return (
                 <div
                   key={i}
-                  className={["ba-card p-7 rounded-[20px] border transition-colors duration-200", borderMuted, cardBg, dk ? "hover:bg-white/[0.05]" : "hover:bg-gray-50/70"].join(" ")}
+                  className={["ba-card p-4 rounded-[16px] md:p-7 md:rounded-[20px] border transition-colors duration-200", borderMuted, cardBg, dk ? "hover:bg-white/[0.05]" : "hover:bg-gray-50/70"].join(" ")}
                   data-delay={String(i * 80)}
                 >
-                  <div className={["w-10 h-10 rounded-xl flex items-center justify-center mb-5", dk ? "bg-blue-500/10" : "bg-blue-50"].join(" ")}>
+                  <div className={["w-9 h-9 rounded-[10px] flex items-center justify-center mb-3 md:w-10 md:h-10 md:rounded-xl md:mb-5", dk ? "bg-blue-500/10" : "bg-blue-50"].join(" ")}>
                     <Icon className="w-5 h-5 text-blue-500" />
                   </div>
-                  <h3 className={["font-poppins text-[16px] font-semibold tracking-tight leading-snug mb-2", textPrimary].join(" ")}>
+                  <h3 className={["font-poppins text-[15px] md:text-[16px] font-semibold tracking-tight leading-snug mb-1.5 md:mb-2", textPrimary].join(" ")}>
                     {sol.title}
                   </h3>
-                  <p className={["font-inter text-[14px] leading-relaxed", textSecondary].join(" ")}>
+                  <p className={["font-inter text-[14px] leading-[1.5] md:leading-relaxed", textSecondary].join(" ")}>
                     {sol.desc}
                   </p>
                 </div>
@@ -587,7 +587,7 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
           </div>
 
           <div className={["mt-12 flex flex-col sm:flex-row sm:items-center gap-5 px-7 py-5 rounded-2xl border", borderMuted, dk ? "bg-white/[0.025]" : "bg-blue-50/40"].join(" ")}>
-            <p className={["font-inter text-[15px] leading-relaxed flex-1", textSecondary].join(" ")}>
+            <p className={["font-inter text-[14.5px] leading-[1.5] md:text-[15px] md:leading-relaxed flex-1", textSecondary].join(" ")}>
               {t({
                 fr: "Ora se branche directement sur vos fichiers Excel existants. Aucune migration, aucune refonte de processus.",
                 en: "Ora plugs directly into your existing Excel files. No migration, no process overhaul.",
@@ -599,14 +599,14 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
       </section>
 
       {/* ══ 3. RAPIDITE & PRECISION ══ */}
-      <section className="py-24 md:py-32 px-6 lg:px-10" style={{ background: bg }}>
+      <section className="py-16 md:py-32 px-5 lg:px-10" style={{ background: bg }}>
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-start mb-16">
+          <div className="grid gap-9 lg:grid-cols-2 lg:gap-12 xl:gap-20 items-start mb-10 md:mb-16">
             <div>
               <div className={["inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5", "text-[11px] font-inter font-semibold uppercase tracking-[0.16em]", dk ? "bg-teal-500/10 text-teal-400 border border-teal-500/20" : "bg-teal-50 text-teal-700 border border-teal-100"].join(" ")}>
                 {t({ fr: "Rapidité et précision d'exécution", en: "Execution speed and precision" })}
               </div>
-              <h2 className={["font-poppins text-[clamp(1.75rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em]", textPrimary].join(" ")}>
+              <h2 className={["font-poppins text-[clamp(1.55rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em]", textPrimary].join(" ")}>
                 {t({ fr: "Des modèles fiables.", en: "Reliable models." })}
                 <br />
                 <span className="text-brand-gradient">{t({ fr: "À la vitesse du deal.", en: "At deal speed." })}</span>
@@ -622,21 +622,25 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
             {executionPoints.map((pt, i) => (
               <div
                 key={i}
-                className={["ba-card flex gap-5 p-7 rounded-[20px] border", borderMuted, dk ? "bg-white/[0.025]" : "bg-white"].join(" ")}
+                className={["ba-card flex flex-col gap-2 xs:flex-row xs:gap-3 md:gap-5 p-4 rounded-[16px] md:p-7 md:rounded-[20px] border", borderMuted, dk ? "bg-white/[0.025]" : "bg-white"].join(" ")}
                 data-delay={String(i * 90)}
               >
-                <div className={["flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center mt-0.5", dk ? "bg-teal-500/10" : "bg-teal-50"].join(" ")}>
+                <div className={["flex-shrink-0 w-9 h-9 rounded-[10px] flex items-center justify-center md:mt-0.5 md:w-10 md:h-10 md:rounded-xl", dk ? "bg-teal-500/10" : "bg-teal-50"].join(" ")}>
                   <CheckCircle className="w-5 h-5 text-teal-500" />
                 </div>
-                <div>
-                  <h3 className={["font-poppins text-[15px] font-semibold tracking-tight leading-snug mb-1.5", textPrimary].join(" ")}>
+                {/* `min-w-0` : enfant de flex, donc `min-width: auto` par
+                    défaut — il refusait de descendre sous la largeur de son mot
+                    le plus long (« Standardized ») et poussait la page à 324 px
+                    dans un écran de 320. Mesuré, pas supposé. */}
+                <div className="min-w-0">
+                  <h3 className={["font-poppins text-[12.5px] md:text-[15px] font-semibold tracking-tight leading-snug mb-1.5 break-words", textPrimary].join(" ")}>
                     {pt.title}
                   </h3>
-                  <p className={["font-inter text-[14px] leading-relaxed", textSecondary].join(" ")}>
+                  <p className={["font-inter text-[14px] leading-[1.5] md:leading-relaxed", textSecondary].join(" ")}>
                     {pt.desc}
                   </p>
                 </div>
@@ -666,24 +670,24 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
       </section>
 
       {/* ══ 4. TESTIMONIALS ══ */}
-      <section className="py-24 md:py-32 px-6 lg:px-10" style={{ background: bgContrast }}>
+      <section className="py-16 md:py-32 px-5 lg:px-10" style={{ background: bgContrast }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 max-w-xl mx-auto">
+          <div className="text-center mb-10 md:mb-16 max-w-xl mx-auto">
             <p className={["font-inter text-[11px] font-semibold uppercase tracking-[0.18em] mb-4", dk ? "text-blue-400" : "text-blue-600"].join(" ")}>
               {t({ fr: "Témoignages", en: "Testimonials" })}
             </p>
-            <h2 className={["font-poppins text-[clamp(1.75rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em]", textPrimary].join(" ")}>
+            <h2 className={["font-poppins text-[clamp(1.55rem,3.5vw,2.75rem)] font-semibold leading-[1.15] tracking-[-0.03em]", textPrimary].join(" ")}>
               {t({ fr: "Des banquiers qui closent", en: "Bankers closing" })}
               <br />
               {t({ fr: "plus vite avec Ora.", en: "faster with Ora." })}
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6">
             {testimonials.map((t, i) => (
               <div
                 key={i}
-                className={["ba-testi flex flex-col gap-5 p-7 rounded-[20px] border", borderMuted, cardBg].join(" ")}
+                className={["ba-testi flex flex-col gap-3 md:gap-5 p-4 rounded-[16px] md:p-7 md:rounded-[20px] border", borderMuted, cardBg].join(" ")}
                 data-delay={String(i * 100)}
               >
                 <div className="flex gap-0.5">
@@ -691,14 +695,14 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
                     <Star key={s} className="w-4 h-4 text-amber-400 fill-amber-400" />
                   ))}
                 </div>
-                <blockquote className={["font-inter text-[15px] leading-relaxed flex-1", textSecondary].join(" ")}>
+                <blockquote className={["font-inter text-[14.5px] leading-[1.5] md:text-[15px] md:leading-relaxed flex-1", textSecondary].join(" ")}>
                   &ldquo;{t.quote}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3 pt-2 border-t border-inherit">
                   <div className={["w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 font-inter text-[13px] font-semibold", dk ? "bg-blue-500/15 text-blue-400" : "bg-blue-100 text-blue-600"].join(" ")}>
                     {t.name.charAt(0)}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className={["font-inter text-[13px] font-semibold", textPrimary].join(" ")}>{t.name}</p>
                     <p className={["font-inter text-[12px]", textSecondary].join(" ")}>{t.role} · {t.company}</p>
                   </div>
@@ -710,11 +714,11 @@ export default function SolutionBanqueAffairesPage({ theme, openBooking }: Props
       </section>
 
       {/* ══ 5. CTA ══ */}
-      <section className="py-24 md:py-28 px-6 lg:px-10" style={{ background: bg }}>
+      <section className="py-16 md:py-28 px-5 lg:px-10" style={{ background: bg }}>
         <div className="max-w-3xl mx-auto text-center">
-          <div className={["rounded-[32px] px-10 py-16 border", borderMuted, dk ? "bg-white/[0.03]" : "bg-gray-50/80"].join(" ")}>
+          <div className={["rounded-[24px] px-6 py-12 border md:rounded-[32px] md:px-10 md:py-16", borderMuted, dk ? "bg-white/[0.03]" : "bg-gray-50/80"].join(" ")}>
             <GitMerge className="w-10 h-10 text-blue-500 mx-auto mb-6" />
-            <h2 className={["font-poppins text-[clamp(1.6rem,3vw,2.5rem)] font-semibold tracking-[-0.03em]", textPrimary].join(" ")}>
+            <h2 className={["font-poppins text-[clamp(1.45rem,3vw,2.5rem)] font-semibold tracking-[-0.03em]", textPrimary].join(" ")}>
               {t({ fr: "Prêt à accélérer vos deals ?", en: "Ready to accelerate your deals?" })}
             </h2>
             <p className={["font-inter mt-4 text-[1.05rem] leading-relaxed", textSecondary].join(" ")}>

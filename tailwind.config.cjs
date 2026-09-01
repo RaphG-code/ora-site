@@ -6,6 +6,29 @@ module.exports = {
         "./src/**/*.{ts,tsx,js,jsx}",
     ],
     theme: {
+        // ── LES PALIERS, DÉCLARÉS EN ENTIER ─────────────────────────────────
+        // `xs` = 400 px, ajouté pour le téléphone (client 2026-08-19) :
+        // Tailwind n'a rien sous `sm` (640 px), or l'écart entre un iPhone SE
+        // (320) et un iPhone 15 Pro Max (430) est de 110 px, soit celui qui
+        // sépare une tablette d'un portable. Sans ce palier, une bande
+        // dimensionnée pour 390 px déborde de 13 px sur 320.
+        //
+        // ⚠ DÉCLARÉ ICI ET NON DANS `extend`, ET C'EST LA RAISON D'ÊTRE DE CE
+        // PAVÉ. Sous `extend`, un palier neuf est AJOUTÉ EN FIN DE LISTE, donc
+        // ses règles sortent APRÈS celles de `md` dans la feuille de style. À
+        // 800 px les deux requêtes correspondent, et c'est la dernière écrite
+        // qui gagne : `xs:h-11` écrasait `md:h-12`, c'est-à-dire que le palier
+        // téléphone reprenait la main sur le bureau. La liste complète, dans
+        // l'ordre croissant, remet chaque palier à sa place.
+        // Les cinq autres valeurs sont celles de Tailwind, inchangées.
+        screens: {
+            xs: "400px",
+            sm: "640px",
+            md: "768px",
+            lg: "1024px",
+            xl: "1280px",
+            "2xl": "1536px",
+        },
         extend: {
             colors: {
                 // ── Marque ────────────────────────────────────────────────

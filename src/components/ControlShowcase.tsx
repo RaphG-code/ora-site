@@ -117,7 +117,7 @@ export default function ControlShowcase({ theme }: ControlShowcaseProps) {
          Le pavé historique qui demandait qu'elle porte « le MÊME fond que
          PrivacyShowcase » est caduc : cette section a été retirée le
          2026-08-15, il n'y a plus de couture à effacer. */
-      className="relative px-6 md:px-12 pt-24 md:pt-32 pb-28 md:pb-40 bg-[#fcfbf7] dark:bg-black"
+      className="relative px-5 md:px-12 pt-16 md:pt-32 pb-20 md:pb-40 bg-[#fcfbf7] dark:bg-black"
       style={{ background: dk ? "#000000" : "#ffffff" }}
     >
       <div className="relative max-w-7xl mx-auto">
@@ -139,7 +139,7 @@ export default function ControlShowcase({ theme }: ControlShowcaseProps) {
           {...fadeUp}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="font-instrument font-normal tracking-[-0.03em] leading-[0.95] text-[#111827] dark:text-white max-w-[10ch]"
-          style={{ fontSize: "clamp(3.2rem, 8vw, 7rem)" }}
+          style={{ fontSize: "clamp(2.4rem, 8vw, 7rem)" }}
         >
           <span className="block">{t({ fr: "Contrôle", en: "Full" })}</span>
           <span className="block">{t({ fr: "total", en: "control" })}</span>
@@ -150,7 +150,14 @@ export default function ControlShowcase({ theme }: ControlShowcaseProps) {
         {/* Remonté de 20/28 à 10/14 (client 2026-08-11 : « les encadrés juste
             en dessous ») : le titre étant devenu fin, l'écart d'origine le
             laissait flotter seul en haut de section. */}
-        <div className="mt-10 md:mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 lg:gap-x-16 gap-y-14 md:gap-y-20">
+        {/* UNE COLONNE SOUS 640 (2026-08-22, « minimaliste et bien fait pour
+            mobile »). Les six garanties ne sont pas des étiquettes mais des
+            PHRASES de 90 à 145 signes ; sur deux colonnes de 165 px elles
+            tombaient à 11,5 px et à 23 signes par ligne — moitié moins que le
+            confort de lecture, mesuré sur les six. Une colonne, 15 px, une
+            garantie à la fois : c'est la même grille qu'au-dessus de 640, avec
+            une colonne de moins. */}
+        <div className="mt-8 md:mt-14 grid grid-cols-1 gap-x-5 sm:grid-cols-2 sm:gap-x-10 lg:grid-cols-3 lg:gap-x-16 gap-y-7 sm:gap-y-8 md:gap-y-20">
           {items.map((it, i) => {
             const Icon = it.icon;
             return (
@@ -168,14 +175,19 @@ export default function ControlShowcase({ theme }: ControlShowcaseProps) {
                 className="max-w-[34ch]"
               >
                 <Icon
-                  className="w-[22px] h-[22px] text-blue-600 dark:text-blue-400"
+                  className="w-[18px] h-[18px] md:w-[22px] md:h-[22px] text-blue-600 dark:text-blue-400"
                   strokeWidth={1.75}
                   aria-hidden
                 />
-                <h3 className="font-poppins font-semibold text-[17px] md:text-[18px] tracking-[-0.01em] text-[#111827] dark:text-white mt-5">
+                <h3 className="font-poppins font-semibold text-[16px] md:text-[18px] max-md:leading-tight tracking-[-0.01em] text-[#111827] dark:text-white mt-3 md:mt-5">
                   {it.title}
                 </h3>
-                <p className="font-inter mt-3 text-[15px] md:text-[16px] leading-relaxed text-gray-600 dark:text-gray-400">
+                {/* Le corps ne REDESCEND PAS au palier `sm` : à 767 px la
+                    grille est déjà à deux colonnes de 344 px, et 11,5 px y
+                    donnaient 55 signes par ligne — une ligne longue en petit
+                    corps, le pire des deux mondes. Il tient 15 px jusqu'à `md`,
+                    où la valeur du bureau reprend la main. */}
+                <p className="font-inter mt-2 md:mt-3 text-[15px] leading-[1.55] md:text-[16px] md:leading-relaxed text-gray-600 dark:text-gray-400">
                   {it.body}
                 </p>
               </motion.div>
