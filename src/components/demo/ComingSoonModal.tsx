@@ -35,7 +35,15 @@ function reste(cible: Date) {
   };
 }
 
-export default function ComingSoonModal({ onClose }: { onClose: () => void }) {
+export default function ComingSoonModal({
+  onClose,
+  onBookCall,
+}: {
+  onClose: () => void;
+  /** Ouvre la modale de réservation. Optionnelle : sans handler, le bouton
+   *  ferme simplement l'annonce plutôt que de mener hors du site. */
+  onBookCall?: () => void;
+}) {
   const { t } = useLang();
   const [c, setC] = useState(() => reste(OUVERTURE));
 
@@ -140,15 +148,23 @@ export default function ComingSoonModal({ onClose }: { onClose: () => void }) {
           )}
 
           <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
-            <a
-              href="https://ora-solution.com/demo"
-              target="_blank"
-              rel="noopener noreferrer"
+            {/* ⚠ CE BOUTON POINTAIT VERS LA WEB APP (client 2026-08-26 :
+                « enlève tous les boutons qui relient vers la web app »). Il
+                promettait d'ailleurs « Être prévenu à l'ouverture » tout en
+                menant à ora-solution.com/demo, ce qui n'était pas une
+                inscription. Il ouvre maintenant la réservation, la seule
+                sortie du site, et son libellé dit ce qu'il fait. */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onBookCall?.();
+              }}
               className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#3b82f6] font-inter text-[15px] font-semibold text-white transition-colors hover:bg-[#2563eb]"
             >
-              {t({ fr: "Être prévenu à l'ouverture", en: "Get notified at launch" })}
+              {t({ fr: "Réserver un appel", en: "Book a call" })}
               <ArrowRight size={16} />
-            </a>
+            </button>
             <button
               type="button"
               onClick={onClose}

@@ -147,16 +147,18 @@ export default function OraHeroMobile({ openBooking }: { openBooking: () => void
           })}
         </p>
 
-        {/* Touch target kept at 52px tall. */}
-        <a
-          href="https://ora-solution.com/demo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-full bg-[#3b82f6] px-8 font-inter font-semibold text-[16.5px] text-white shadow-[0_14px_32px_-12px_rgba(59,130,246,0.6)] active:bg-[#2f6fe0]"
+        {/* Touch target kept at 52px tall.
+            ⚠ Mène à la RÉSERVATION depuis le 2026-08-26, comme le hero de
+            bureau : le lien vers la web app est retiré du site (voir le pavé
+            de OraHeroDemo). Les deux heros portent le même appel. */}
+        <button
+          type="button"
+          onClick={openBooking}
+          className="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-full bg-[#3b82f6] px-8 font-inter text-[16.5px] font-semibold text-white shadow-[0_14px_32px_-12px_rgba(59,130,246,0.6)] active:bg-[#2563eb]"
         >
-          {t({ fr: "Commencer", en: "Get started" })}
+          {t({ fr: "Réserver un appel", en: "Book a call" })}
           <ArrowRight className="h-[18px] w-[18px]" />
-        </a>
+        </button>
 
         {/* ⚠ MÊME RANGÉE DE PREUVE QUE LE HERO DE BUREAU (2026-08-21), au mot
             près : les deux doivent dire la même chose, c'est le même écran vu

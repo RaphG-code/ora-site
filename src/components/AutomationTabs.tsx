@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { VideoWithScrubber } from "./InViewVideo";
 import OraAppScene from "./OraAppScene";
 import { useLang } from "@/lib/i18n";
@@ -97,6 +97,21 @@ interface AutomationTabsProps {
  *  Built-in Retina Display.mp4, 1660 x 1080). */
 const DEMO_CLIP = "/demo-automatisation.mp4";
 
+/** ── LA DÉMO PRINCIPALE ────────────────────────────────────────────────────
+ *  ora-1.mp4, 3840 x 2160, 34 secondes : le film du produit, celui que le
+ *  client appelle « la vidéo démo principale ». Il a longtemps tenu le hero
+ *  (OraHeroVideo, puis OraGallery) et n'était plus joignable nulle part depuis
+ *  que la démo au défilement l'a remplacé — le fichier restait servi, aucun
+ *  écran n'y menait. Client 2026-08-28 : « dans automatisation mets un lien
+ *  pour voir la vidéo démo principale ».
+ *
+ *  ⚠ 23 Mo, ET C'EST POURQUOI IL N'EST MONTÉ QU'AU CLIC. Le <video> vit dans
+ *  la fenêtre d'agrandissement, qui n'existe dans le DOM qu'une fois le lien
+ *  actionné : tant que personne ne clique, pas une requête n'est faite. Le
+ *  poser en flux dans la section, même en `preload="none"`, coûterait une
+ *  connexion et un décodage d'en-tête à chaque visiteur de la page d'accueil. */
+const MAIN_DEMO = "/ora-1.mp4";
+
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -111,6 +126,10 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
      deux fenêtres ouvertes en même temps n'ont pas de sens, et le porter par
      panneau obligerait à six états parallèles. */
   const [zoom, setZoom] = useState<number | null>(null);
+  /* La fenêtre de la démo principale. État SÉPARÉ de `zoom`, qui indexe les
+     panneaux : la démo n'est pas un panneau, elle n'a ni onglet ni rang dans
+     ITEMS, et lui inventer un index fausserait le rail et la fenêtre. */
+  const [demo, setDemo] = useState(false);
   const panelsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   /* La phrase de tête de chaque panneau suit la grammaire de la référence :
@@ -306,7 +325,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
         <motion.h2
           {...fadeUp}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="px-6 md:px-10 pb-14 md:pb-20 font-instrument font-normal tracking-[-0.03em] leading-[1.14] text-[clamp(1.9rem,3.9vw,3.3rem)]"
+          className="px-6 md:px-10 pb-8 md:pb-11 font-instrument font-normal tracking-[-0.03em] leading-[1.16] text-[clamp(1.7rem,3.05vw,2.65rem)]"
         >
           {/* ⚠ TITRE REPRIS le 2026-08-15 (client : « trouve une phrase plus
               générique qui permet de comprendre immédiatement ce que l'on fait
@@ -326,13 +345,78 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
           <span className="text-[#111827] dark:text-white">
             {t({ fr: "Vos fichiers entrent, vos livrables sortent.", en: "Your files go in, your deliverables come out." })}
           </span>{" "}
+          {/* ⚠ LA SECONDE ENCRE DIT MAINTENANT OÙ LE TRAVAIL SE PASSE (client
+              2026-08-29 : il faut qu'il soit écrit que nos dossiers ne sont pas
+              anonymisés et ne partent pas vers un serveur). Elle disait
+              « Ora enchaîne tout le travail répétitif qui va de la donnée brute
+              au document final », c'est-à-dire le MOUVEMENT — ce qui entre, ce
+              qui sort. Le mouvement est déjà dit par la première encre, mot
+              pour mot : « Vos fichiers entrent, vos livrables sortent. » La
+              seconde le répétait donc, et laissait la question que se pose un
+              cabinet devant un outil qui lit des dossiers clients : où est-ce
+              que ça tourne, et faut-il caviarder les noms avant.
+
+              ⚠ « VOS FICHIERS N'EN SORTENT PAS » ET NON « RIEN NE PART SUR UN
+              SERVEUR ». La seconde formule serait plus frappante et elle serait
+              FAUSSE : le site annonce par ailleurs un hébergement à Francfort
+              et Genève (rangée de preuve du hero, FAQ), donc il existe bien des
+              serveurs. Ce que le site tient, et qui suffit, c'est que les
+              FICHIERS restent sur le poste — « Traitement 100 % local, vos
+              fichiers ne quittent pas votre poste » est déjà écrit dans le
+              panneau Bilan développé, quatre écrans plus bas. On reprend cette
+              promesse-là, pas une plus large.
+
+              Longueur tenue : 132 caractères les deux encres cumulées, contre
+              122 avant. Le titre garde ses trois lignes à 1440. */}
           <span className="text-[#6b7688] dark:text-gray-500">
             {t({
-              fr: "Ora enchaîne tout le travail répétitif qui va de la donnée brute au document final.",
-              en: "Ora runs the whole repetitive chain, from raw data to finished document.",
+              fr: "Rien à anonymiser : le répétitif s'enchaîne sur vos postes, vos fichiers n'en sortent pas.",
+              en: "Nothing to anonymise: the repetitive work runs on your own machines, your files never leave them.",
             })}
           </span>
         </motion.h2>
+
+        {/* ── LE LIEN VERS LA DÉMO PRINCIPALE ───────────────────────────────
+            Client 2026-08-28 : « dans automatisation mets un lien pour voir la
+            vidéo démo principale ».
+
+            ICI ET PAS DANS UN PANNEAU, pour une raison de portée : la vidéo
+            montre le produit ENTIER, pas un module. Rangée sous l'onglet
+            « Automatisations » (le fourre-tout du sur-mesure) ou sous « Bilan
+            développé » (qui porte déjà SON propre enregistrement d'écran),
+            elle se lirait comme la démo de ce module-là. Sous le titre de
+            section, elle couvre ce que le titre annonce : ce qui entre et ce
+            qui sort.
+
+            UN LIEN, PAS UN BOUTON PLEIN. Le seul appel plein de la page reste
+            la réservation ; un second aplat bleu ici entrerait en concurrence
+            avec lui, et c'est exactement le défaut relevé à l'audit du
+            2026-08-15 (« deux CTA se disputent »). La pastille de lecture
+            porte l'accent, le libellé reste un lien.
+
+            Le pas sous le titre est repris ici : le h2 est descendu de pb-14 à
+            pb-7 pour que le lien reste ACCROCHÉ au titre, et c'est ce bloc qui
+            rend le blanc d'origine avant le cadre. */}
+        <motion.div
+          {...fadeUp}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
+          className="px-6 md:px-10 pb-14 md:pb-20"
+        >
+          <button
+            type="button"
+            onClick={() => setDemo(true)}
+            className="group inline-flex items-center gap-3 font-inter text-[15px] font-semibold text-[#2f6ff0] transition-colors duration-150 hover:text-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 dark:text-[#8ab4fa]"
+          >
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#eef3ff] text-[#3b82f6] ring-1 ring-[#3b82f6]/15 transition-colors duration-150 group-hover:bg-[#3b82f6] group-hover:text-white group-hover:ring-[#3b82f6] dark:bg-white/[0.08] dark:text-white/70 dark:ring-white/10">
+              {/* `fill` autant que `stroke` : à 13 px, un triangle en contour
+                  seul se lit comme un chevron, pas comme une lecture. */}
+              <Play className="ml-[1.5px] h-[13px] w-[13px]" strokeWidth={2} fill="currentColor" />
+            </span>
+            <span className="underline decoration-[#2f6ff0]/30 underline-offset-[4px] transition-colors duration-150 group-hover:decoration-[#1d4ed8]/60 dark:decoration-[#8ab4fa]/30">
+              {t({ fr: "Voir la démo en vidéo", en: "Watch the demo video" })}
+            </span>
+          </button>
+        </motion.div>
 
         {/* ── LE RAIL, VERSION TÉLÉPHONE (audit du 2026-08-15) ──────────────
             Le rail de gauche est masqué sous lg. Le contenu survivait, mais un
@@ -389,10 +473,10 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                 15 px c'est une navigation, donc Inter. Ce n'est pas en
                 contradiction avec la grille d'Atlas passée à Instrument Sans le
                 même jour : là-bas ce sont des titres de 21 px. */}
-            <ul className="sticky top-28 space-y-2 py-14 pl-6 md:pl-10 pr-6 md:space-y-2.5">
+            <ul className="sticky top-28 space-y-4 py-20 pl-6 md:pl-10 pr-6 md:space-y-5 md:py-28">
               {/* Le filet vertical qui porte le repère bleu, doublant le bord
                   gauche de la liste comme sur la référence. */}
-              <span aria-hidden className={`absolute inset-y-14 -left-0 w-px ${dk ? "bg-white/10" : "bg-[#0a2540]/[0.10]"}`} style={{ left: 0 }} />
+              <span aria-hidden className={`absolute inset-y-20 -left-0 w-px ${dk ? "bg-white/10" : "bg-[#0a2540]/[0.10]"}`} style={{ left: 0 }} />
               {ITEMS.map((it, i) => {
                 const on = i === active;
                 return (
@@ -425,7 +509,18 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                          coup d'œil, alors qu'il suffisait à 23 px. */
                       className={`flex items-center gap-2 py-1 text-left font-inter text-[15px] tracking-[-0.01em] transition-colors duration-200 md:text-[16px] ${
                         on
-                          ? "font-semibold text-[#111827] dark:text-white"
+                          ? "font-medium text-[#111827] dark:text-white"
+                          /* ⚠ NE PAS PÂLIR CETTE ENCRE. La référence attio affiche ses
+                             entrées inactives dans un gris très clair, et c'est
+                             tentant à recopier. CLAUDE.md l'interdit nommément :
+                             #c4cad6, #9aa4b5 et #9aa3b2 ont été essayés ici même,
+                             mesurés entre 1,6:1 et 2,5:1 de contraste, et « la
+                             navigation de la section à onglets était effectivement
+                             invisible ». La règle : rien sous #6b7688 sur fond
+                             clair ; si un texte doit reculer davantage, on le fait
+                             plus petit ou plus court, pas plus pâle.
+                             L'allègement demandé passe donc par la TAILLE et
+                             l'ESPACE, pas par le contraste. */
                           : "font-normal text-[#7a8496] hover:text-[#5b6577] dark:text-white/30 dark:hover:text-white/55"
                       }`}
                     >
@@ -493,7 +588,19 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                 ref={(el) => { panelsRef.current[i] = el; }}
                 className={`min-w-0 ${i > 0 ? `border-t ${rule}` : ""}`}
               >
-                <p className="max-w-[46ch] px-6 pt-14 md:px-12 md:pt-16 font-instrument font-normal text-[1.35rem] md:text-[1.7rem] leading-[1.28] tracking-[-0.02em]">
+                {/* ⚠ REFONTE « À LA ATTIO » (client 2026-08-29 : « leurs polices sont
+                    plus petites, il y a plus d'espace blanc, c'est plus
+                    minimaliste ; nous c'est trop compact, trop gros, trop
+                    agressif »).
+                    Ce qui fait la respiration de la référence n'est PAS une
+                    seule valeur, c'est le rapport entre deux : leur phrase de
+                    panneau tient dans une colonne étroite, et elle est entourée
+                    de trois fois sa propre hauteur de blanc. Ici la phrase
+                    faisait 27 px pour 64 px de retrait haut et 44 px avant le
+                    visuel — le texte pesait plus que le vide, d'où « agressif ».
+                    La phrase descend à 24 px, le retrait haut monte à 112 px et
+                    l'écart au visuel à 80 px : le blanc passe devant. */}
+                <p className="max-w-[42ch] px-6 pt-20 md:px-12 md:pt-28 font-instrument font-normal text-[1.2rem] md:text-[1.5rem] leading-[1.35] tracking-[-0.02em]">
                   <span className="text-[#111827] dark:text-white">{it.lead}</span>{" "}
                   <span className="text-[#6b7688] dark:text-gray-500">{it.rest}</span>
                 </p>
@@ -506,7 +613,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                      flottante déborde SOUS la fenêtre : la borner au même
                      rembourrage que les autres la ferait mordre sur le filet
                      du panneau suivant. */
-                  <div className={`group/panel relative mt-9 md:mt-11 border-t ${rule} ${zone} px-6 pb-16 pt-8 md:px-12 md:pb-24 md:pt-12`}>
+                  <div className={`group/panel relative mt-14 md:mt-20 border-t ${rule} ${zone} px-6 pb-16 pt-8 md:px-12 md:pb-24 md:pt-12`}>
                     <ZoomButton
                       onClick={() => setZoom(i)}
                       label={t({ fr: "Agrandir", en: "Enlarge" })}
@@ -537,7 +644,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                      supérieur de l'application, vu tout de suite par le
                      client. Un futur clip sans bande : rapport 1660 / 1080 et
                      retirer object-bottom. */
-                  <div className={`mt-9 md:mt-11 border-t ${rule}`}>
+                  <div className={`mt-14 md:mt-20 border-t ${rule}`}>
                     {/* LE REMBOURRAGE EST ICI, sur un bloc à lui, et pas sur
                         le conteneur du panneau : la nappe grise des deux
                         cartes qui suivent doit courir d'un filet à l'autre,
@@ -663,7 +770,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                      client, « l'encadré est bien trop petit pour répliquer ».
                      La colonne de droite est élargie (1,15 fr) et la carte
                      garde sa hauteur de grille (620 px). */
-                  <div className={`group/panel relative mt-9 md:mt-11 border-t ${rule} ${zone} grid md:grid-cols-[1fr_1.15fr]`}>
+                  <div className={`group/panel relative mt-14 md:mt-20 border-t ${rule} ${zone} grid md:grid-cols-[1fr_1.15fr]`}>
                     <ZoomButton
                       onClick={() => setZoom(i)}
                       label={t({ fr: "Agrandir", en: "Enlarge" })}
@@ -719,7 +826,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                      financière » de la grille, copie conforme et ENTIÈRE —
                      coque blanche, nappe, rubans de soie, carte-objet — posée
                      sur la nappe grise (« je veux même tout l'encadré »). */
-                  <div className={`group/panel relative mt-9 md:mt-11 border-t ${rule} ${zone} grid md:grid-cols-[1.15fr_1fr]`}>
+                  <div className={`group/panel relative mt-14 md:mt-20 border-t ${rule} ${zone} grid md:grid-cols-[1.15fr_1fr]`}>
                     <ZoomButton
                       onClick={() => setZoom(i)}
                       label={t({ fr: "Agrandir", en: "Enlarge" })}
@@ -785,7 +892,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                      filet du panneau suivant. En dessous de md la fenêtre
                      disparaît, il n'y a pas la place de montrer un bout
                      d'application sur une colonne de téléphone. */
-                  <div className={`mt-9 md:mt-11 border-t ${rule} ${zone} grid overflow-hidden md:grid-cols-[1fr_1.08fr]`}>
+                  <div className={`mt-14 md:mt-20 border-t ${rule} ${zone} grid overflow-hidden md:grid-cols-[1fr_1.08fr]`}>
                     <ul className={`px-6 py-10 md:border-r ${rule} md:px-10 md:py-12`}>
                       {it.modules.map((m) => (
                         <li key={m.title} className={`border-t ${rule} py-5 first:border-t-0 first:pt-0 last:pb-0`}>
@@ -823,7 +930,7 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
                      en lien dans la phrase. Ce qui distingue l'onglet reste
                      ENTIER dans le rail (le ✦, le filet pointillé, la glose) :
                      c'est là qu'il avait été demandé, et il n'a pas bougé. */
-                  <div className="px-6 pb-14 md:px-12 md:pb-16 mt-9 md:mt-11">
+                  <div className="px-6 pb-14 md:px-12 md:pb-16 mt-14 md:mt-20">
                     <ul className="grid gap-x-10 sm:grid-cols-2">
                       {it.examples.map((ex) => (
                         <li
@@ -924,6 +1031,48 @@ export default function AutomationTabs({ theme, openBooking }: AutomationTabsPro
           ) : ITEMS[zoom].media === "valuation" ? (
             <ValuationShowcaseCard />
           ) : null}
+        </ZoomOverlay>
+      )}
+
+      {/* ── LA FENÊTRE DE LA DÉMO PRINCIPALE ────────────────────────────────
+          LA MÊME fenêtre que les panneaux (ZoomOverlay), pas une seconde
+          mécanique : voile bleu, montée depuis le bas, fermeture à Échap, gel
+          du défilement, retour du focus. Un lecteur vidéo posé à la main
+          aurait tout ça à refaire, et à tenir.
+
+          `seeLabel` descend au visuel, `onBook` ouvre la réservation : la
+          fenêtre se ferme donc sur l'appel du site et non sur un cul-de-sac.
+
+          RAPPORT 16/9 VERROUILLÉ sur le cadre (le fichier est en 3840 x 2160)
+          et `object-contain` : la vidéo montre une interface, un recadrage en
+          `cover` en couperait les bords, c'est-à-dire les barres d'outils.
+
+          ⚠ LA PHRASE-BÉNÉFICE CITE LA DURÉE DU FICHIER (34,04 s, mesurés). Le
+          jour où ora-1.mp4 est remplacé, elle doit suivre, sinon elle ment.
+          C'est le prix de la promesse : annoncer la longueur avant le clic
+          fait cliquer, une durée vague ne fait rien. */}
+      {demo && (
+        <ZoomOverlay
+          title={t({ fr: "Ora en démonstration", en: "Ora in action" })}
+          lead={t({
+            fr: "Le produit en trente-quatre secondes.",
+            en: "The product in thirty-four seconds.",
+          })}
+          desc={t({
+            fr: "Un fichier entre, les traitements s'enchaînent, le livrable sort. La même chaîne que décrivent les modules ci-dessous, filmée d'un bout à l'autre.",
+            en: "A file goes in, the routines run one after another, the deliverable comes out. The same chain the modules below describe, filmed end to end.",
+          })}
+          onBook={openBooking}
+          bookLabel={t({ fr: "Réserver un appel", en: "Book a call" })}
+          seeLabel={t({ fr: "Voir la démo", en: "Watch the demo" })}
+          onClose={() => setDemo(false)}
+        >
+          <VideoWithScrubber
+            src={MAIN_DEMO}
+            frameClassName="relative overflow-hidden rounded-[12px] bg-black ring-1 ring-[#0a2540]/[0.10] dark:ring-white/10"
+            frameStyle={{ aspectRatio: "16 / 9" }}
+            className="block h-full w-full object-contain"
+          />
         </ZoomOverlay>
       )}
     </section>
