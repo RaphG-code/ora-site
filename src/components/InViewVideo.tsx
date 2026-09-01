@@ -27,6 +27,16 @@ type Props = {
    * EN DEHORS du cadre du clip. Rien d'autre n'a à s'en servir.
    */
   videoRef?: RefObject<HTMLVideoElement | null>;
+  /**
+   * Image affichée AVANT la première frame décodée. Ajoutée le 2026-08-29 pour
+   * le hero : `preload="metadata"` ne télécharge que l'en-tête, si bien que le
+   * cadre restait NOIR le temps que la vidéo arrive — sur un fond blanc et au
+   * premier écran, c'est un trou. Le poster est une jpg de quelques dizaines
+   * de kilo-octets, il s'affiche immédiatement et cède la place à la vidéo.
+   * Les fichiers vivent dans `public/posters/`, un par clip, extraits à
+   * l'ffmpeg (voir les jpg déjà présents).
+   */
+  poster?: string;
 };
 
 /**
@@ -47,6 +57,7 @@ export default function InViewVideo({
   threshold = 0.35,
   rootMargin = "0px 0px 20% 0px",
   videoRef,
+  poster,
 }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
 
@@ -108,6 +119,7 @@ export default function InViewVideo({
       muted
       playsInline
       preload="metadata"
+      poster={poster}
       className={className}
       style={style}
     />

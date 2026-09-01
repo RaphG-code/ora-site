@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Mail, Zap } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 
 /**
@@ -61,8 +61,44 @@ const DAY_PATTERNS = [
   ["10:00", "11:30", "14:30", "17:15"],
 ] as const;
 
-/** « Un jour sur deux ». Les week-ends sont sautés sans consommer le pas. */
-const DAY_STEP = 2;
+/** ── LA RARETÉ NE DOIT PAS AVOIR L'AIR D'UNE RÈGLE ────────────────────────
+ *  Client 2026-08-29 : « fais en sorte que ce ne soit pas que lundi, mercredi,
+ *  vendredi ; des fois deux jours de suite, des fois rien pendant trois jours.
+ *  Là on voit très bien que c'est organisé, et il ne faut pas. »
+ *
+ *  Il a raison, et le défaut venait du pas fixe : « un jour ouvré sur deux »
+ *  produit mécaniquement lundi / mercredi / vendredi, puis mardi / jeudi la
+ *  semaine suivante. Un agenda réel n'a pas de période — il a des trous.
+ *
+ *  ⚠ IRRÉGULIER MAIS PAS ALÉATOIRE, et la distinction est déjà posée plus haut
+ *  dans ce fichier pour les horaires : `Math.random()` donnerait un agenda
+ *  différent à chaque rendu, deux onglets ouverts se contrediraient, et revenir
+ *  d'un mois à l'autre changerait le passé. L'ouverture d'un jour est donc une
+ *  FONCTION PURE DE SA DATE (hachage FNV-1a de l'ISO) : le même jour donne
+ *  toujours la même réponse, sur tous les onglets et toutes les visites, mais
+ *  la suite n'a aucune période repérable.
+ *
+ *  DEUX GARDE-FOUS bornent le hasard, sinon il produit des semaines entières
+ *  vides ou pleines :
+ *    · jamais plus de TROIS jours ouvrés fermés d'affilée — au-delà l'agenda
+ *      ne se lit plus comme rare mais comme mort, et le visiteur s'en va ;
+ *    · jamais plus de DEUX jours ouverts d'affilée — c'est ce qui garde la
+ *      rareté, qui est la raison d'être de tout ce fichier (client
+ *      2026-08-20 : « on est trop disponibles, ils n'y verront aucune
+ *      valeur »).
+ *  Entre les deux, on obtient bien des paires de jours collés, des trous de
+ *  trois jours, et aucun motif hebdomadaire. */
+function graine(cle: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < cle.length; i++) {
+    h ^= cle.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967296;
+}
+
+/** Part des jours ouvrés retenus, avant garde-fous. */
+const TAUX_OUVERTURE = 0.45;
 
 /** Une douzaine de jours ouverts, soit environ quatre semaines de calendrier :
  *  assez pour que le mois suivant ait de quoi s'afficher, assez peu pour que
@@ -104,22 +140,99 @@ function buildOpenDays(): { iso: string; date: Date; times: readonly string[] }[
   cur.setHours(0, 0, 0, 0);
   cur.setDate(cur.getDate() + 1);
 
-  // Garde-fou : douze jours ouvrés un sur deux tiennent dans ~40 itérations.
   let guard = 0;
-  while (out.length < OPEN_DAYS && guard++ < 120) {
+  let fermesDaffilee = 0;
+  let ouvertsDaffilee = 0;
+  while (out.length < OPEN_DAYS && guard++ < 200) {
     const dow = cur.getDay();
     if (dow === 0 || dow === 6) {
       cur.setDate(cur.getDate() + 1);
       continue;
     }
-    out.push({
-      iso: toIso(cur),
-      date: new Date(cur),
-      times: DAY_PATTERNS[out.length % DAY_PATTERNS.length],
-    });
-    cur.setDate(cur.getDate() + DAY_STEP);
+    const iso = toIso(cur);
+    let ouvert = graine(iso) < TAUX_OUVERTURE;
+    if (fermesDaffilee >= 3) ouvert = true;      // l'agenda ne doit pas paraître mort
+    if (ouvertsDaffilee >= 2) ouvert = false;    // ni trop disponible
+
+    if (ouvert) {
+      out.push({
+        iso,
+        date: new Date(cur),
+        // Le motif horaire est tiré de la date lui aussi : indexé sur la
+        // position, deux jours voisins auraient toujours des grilles voisines.
+        times: DAY_PATTERNS[Math.floor(graine(iso + "h") * DAY_PATTERNS.length)],
+      });
+      ouvertsDaffilee++;
+      fermesDaffilee = 0;
+    } else {
+      fermesDaffilee++;
+      ouvertsDaffilee = 0;
+    }
+    cur.setDate(cur.getDate() + 1);
   }
   return out;
+}
+
+
+/** ── ÉCRIRE PLUTÔT QUE RÉSERVER ────────────────────────────────────────────
+ *  Client 2026-08-29 : « il faut aussi un bouton pour juste nous contacter,
+ *  qu'on puisse directement nous envoyer un mail ou un message préfait ».
+ *
+ *  ⚠ IL VIT ICI, DANS LE CHOIX DU CRÉNEAU, et c'est le correctif de fond. Il
+ *  n'existait qu'à l'étape SUIVANTE, sous l'agenda Cal.com — donc uniquement
+ *  pour qui avait déjà trouvé une heure. Celui pour qui aucune date ne convient,
+ *  c'est-à-dire exactement la personne à qui il s'adresse, ne l'atteignait
+ *  jamais. Un agenda volontairement rare (voir le pavé de buildOpenDays) laisse
+ *  forcément des gens sans créneau : la sortie doit être visible pendant le
+ *  choix, pas après.
+ *
+ *  ⚠ LE CORPS DU MESSAGE EST PRÉRÉDIGÉ. Un `mailto:` nu ouvre une fenêtre vide,
+ *  le visiteur doit trouver quoi écrire et beaucoup referment. Le brouillon
+ *  pose la demande et laisse TROIS CHAMPS À TROUS : rien n'est affirmé à la
+ *  place du visiteur, on lui épargne seulement la page blanche.
+ *
+ *  ⚠ LES SAUTS DE LIGNE SONT DES CRLF, encodés par `encodeURIComponent`. Un
+ *  simple retour à la ligne non encodé est ignoré par Outlook et par Mail, et
+ *  le brouillon arrive en un seul bloc.
+ *
+ *  ⚠ « RÉPONSE SOUS 24 H OUVRÉES » N'EST PAS INVENTÉ : c'est le mot pour mot de
+ *  DownloadPage.tsx, où l'engagement est déjà pris. Deux endroits du site ne
+ *  doivent pas promettre deux délais. */
+const EMAIL_CONTACT = "contact@ora-solution.com";
+
+export function ContactDirect() {
+  const { t } = useLang();
+  const corps = t({
+    fr:
+      "Bonjour,\r\n\r\n" +
+      "Aucun créneau ne me convient, je préfère échanger autrement.\r\n\r\n" +
+      "Structure : \r\n" +
+      "Ce que j'aimerais automatiser : \r\n" +
+      "Mes disponibilités : \r\n\r\n" +
+      "Merci,\r\n",
+    en:
+      "Hello,\r\n\r\n" +
+      "None of the slots work for me, I would rather talk another way.\r\n\r\n" +
+      "Company: \r\n" +
+      "What I would like to automate: \r\n" +
+      "When I am available: \r\n\r\n" +
+      "Thanks,\r\n",
+  });
+  const sujet = t({ fr: "Demande de rendez-vous Ora", en: "Ora call request" });
+  return (
+    <div className="mt-5 border-t border-[#0a2540]/[0.08] pt-5 dark:border-white/10">
+      <a
+        href={`mailto:${EMAIL_CONTACT}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`}
+        className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#0a2540]/[0.14] px-4 py-3 font-inter text-[13.5px] font-semibold text-[#42506b] transition-colors duration-150 hover:border-[#0a2540]/[0.28] hover:bg-[#0a2540]/[0.03] dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/[0.06]"
+      >
+        <Mail className="h-4 w-4 shrink-0 text-[#5b6577] dark:text-gray-400" strokeWidth={1.9} aria-hidden />
+        {t({ fr: "Aucune date ne me convient, nous écrire", en: "No date works for me, write to us" })}
+      </a>
+      <p className="mt-2 text-center font-inter text-[12px] leading-tight text-[#6b7688] dark:text-gray-500">
+        {t({ fr: "Message prérempli, réponse sous 24 h ouvrées", en: "Pre-filled message, reply within 1 business day" })}
+      </p>
+    </div>
+  );
 }
 
 export default function SlotPicker({ onPick }: { onPick: (slot: Slot) => void }) {
@@ -151,6 +264,38 @@ export default function SlotPicker({ onPick }: { onPick: (slot: Slot) => void })
     : cursor;
   const canPrev = cursor > firstMonth;
   const canNext = cursor < lastMonth;
+
+  /* ── LA MENTION DE RARETÉ ──────────────────────────────────────────────
+   * Client 2026-08-29 : « mets il ne reste plus que deux dates, avec un truc
+   * rouge qui met la pression ».
+   *
+   * ⚠ LE NOMBRE EST COMPTÉ, JAMAIS ÉCRIT EN DUR, et c'est la seule chose qui
+   * rend cette mention défendable. Elle décrit EXACTEMENT ce que le visiteur a
+   * sous les yeux : les jours ouverts du mois affiché, qu'il peut recompter sur
+   * la grille en dessous. Si elle dit trois, il y en a trois de cliquables.
+   * Un nombre fixe (« plus que 2 places ! ») serait faux dès le lendemain, et
+   * une rareté qu'on peut démentir en comptant fait l'effet inverse de celui
+   * qu'on cherche : elle décrédibilise le reste de la page.
+   * Pour la même raison, aucune mention du type « 12 personnes regardent ce
+   * calendrier » n'a été ajoutée : rien dans le produit ne permet de la
+   * vérifier.
+   *
+   * Elle ne s'affiche qu'au-DESSOUS de huit dates. Le seuil a été relevé de
+   * cinq à huit après mesure : un mois entier n'en ouvre que sept, la mention
+   * n'apparaissait donc jamais en début de mois, c'est-à-dire précisément quand
+   * un visiteur découvre l'agenda. Sept dates ouvertes sur vingt-deux jours
+   * ouvrés est une contrainte réelle, et elle se resserre toute seule au fil
+   * du mois : mi-septembre la même mention dira trois. */
+  const datesDuMois = useMemo(
+    () =>
+      days.filter(
+        (d) =>
+          d.date.getFullYear() === cursor.getFullYear() &&
+          d.date.getMonth() === cursor.getMonth(),
+      ).length,
+    [days, cursor],
+  );
+  const moisEnCours = cursor.toLocaleDateString(locale, { month: "long" });
 
   /* LA MATRICE DU MOIS. On commence la semaine le LUNDI (`(dow + 6) % 7`) :
      `getDay()` rend 0 pour dimanche, ce qui est la convention américaine et
@@ -187,6 +332,29 @@ export default function SlotPicker({ onPick }: { onPick: (slot: Slot) => void })
        le décentrer ; le descendre sous la croix est la seule solution qui
        garde sa pleine largeur. Toute la colonne descend avec lui. */
     <div className="flex max-h-[68vh] flex-col overflow-y-auto px-5 pb-5 pt-14 md:max-h-[80vh] md:px-7">
+      {/* ── LA MENTION DE RARETÉ, EN TÊTE ─────────────────────────────────
+          Rouge, en haut, avant tout le reste : c'est ce que le client demande
+          (« un truc rouge qui met la pression »). Voir le pavé de `datesDuMois`
+          pour ce qui la rend défendable — le nombre est COMPTÉ sur la grille
+          affichée juste en dessous, il n'est jamais écrit en dur.
+          Le rouge ne teinte que la pastille : la phrase reste en encre normale,
+          sinon le bloc entier crie et on ne lit plus rien. La pastille pulse
+          (`animate-ping`), ce qui suffit à attirer l'œil sans clignoter. */}
+      {datesDuMois > 0 && datesDuMois <= 8 && (
+        <p className="mb-4 flex items-center gap-2.5 font-inter text-[13px] leading-tight text-[#5b6577] dark:text-gray-400">
+          <span aria-hidden className="relative flex h-[7px] w-[7px] shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#dc2626] opacity-70" />
+            <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-[#dc2626]" />
+          </span>
+          <span>
+            {t({
+              fr: `Plus que ${datesDuMois} date${datesDuMois > 1 ? "s" : ""} en ${moisEnCours}`,
+              en: `Only ${datesDuMois} date${datesDuMois > 1 ? "s" : ""} left in ${moisEnCours}`,
+            })}
+          </span>
+        </p>
+      )}
+
       {/* ── LE RACCOURCI (client 2026-08-20 : « un bouton où on peut cliquer
           sur le rendez-vous le plus proche possible ») ────────────────────
           En TÊTE d'écran et non en pied : c'est le chemin le plus court vers
@@ -306,7 +474,12 @@ export default function SlotPicker({ onPick }: { onPick: (slot: Slot) => void })
             ))}
           </div>
 
-          <div className="mt-2 grid grid-cols-4 gap-2">
+          {/* `mb-6` SOUS LA GRILLE (client 2026-08-30 : « un petit espace
+              blanc en dessous des dates, c'est trop serré ») : les pastilles
+              d'heures butaient à 20 px du filet du bouton « nous écrire »,
+              soit moins que l'écart entre deux rangées du calendrier — le
+              pied de l'écran se lisait comme comprimé. */}
+          <div className="mb-6 mt-2 grid grid-cols-4 gap-2">
             {selected.times.map((time) => (
               <button
                 key={time}
@@ -320,6 +493,7 @@ export default function SlotPicker({ onPick }: { onPick: (slot: Slot) => void })
           </div>
         </div>
       )}
+      <ContactDirect />
     </div>
   );
 }

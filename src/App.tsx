@@ -9,7 +9,7 @@ import OraLogoSpinner from "./components/OraLogoSpinner";
 // point, ne mets pas combien d'heures vous passez »). Les trois fichiers
 // restent dans le dépôt ; les remonter demanderait de rétablir leurs phases
 // dans BookingPhase, leurs branches de rendu et leurs entrées de BOOKING_STEPS.
-import SlotPicker, { type Slot } from "./components/SlotPicker";
+import SlotPicker, { ContactDirect, type Slot } from "./components/SlotPicker";
 // StackingCards n'est plus monté du tout depuis le 2026-08-15 : les deux cartes
 // qui montaient l'une sur l'autre sont parties le 2026-08-14, et le bandeau de
 // formats (FileChipStrip) a suivi l'en-tête « Automatisez de bout en bout » le
@@ -573,8 +573,9 @@ const BOOKING_STEPS = [
 // 2026-08-03 sur demande du client : c'est celle qu'il relève, et elle est déjà
 // annoncée à douze autres endroits du site. Une adresse nominative sur un bouton
 // de prise de rendez-vous fait perdre des prospects sans que personne ne s'en
-// aperçoive, le jour où elle n'est plus relevée.
-const BOOKING_EMAIL = "contact@ora-solution.com";
+/* ⚠ `BOOKING_EMAIL` A DÉMÉNAGÉ dans SlotPicker.tsx, sous le nom
+   EMAIL_CONTACT : le bouton qui l'utilise y vit désormais, et il est partagé
+   entre les deux étapes de la réservation (voir ContactDirect). */
 
 // === Scroll Fade-In Wrapper ===
 type FadeInOnScrollProps = {
@@ -1371,7 +1372,28 @@ const App = () => {
           Conséquence à surveiller : la section qui suit ouvre elle aussi sur du
           clair, l'alternance saute donc sur ce couple. Si le rythme des fonds
           est repris un jour, c'est ici qu'il faudra rétablir `#fcfbf7`. */}
-      <section id="features" className="relative pt-20 md:pt-28 pb-0 px-6 md:px-12 bg-white dark:bg-black md:dark:bg-background">
+      {/* ══ FUSIONNÉE AVEC LA SECTION AUTOMATISATION ═══════════════════════
+          Client 2026-08-29 : « merge la partie automatisation avec les deux
+          encadrés d'en dessous pour n'en faire qu'une seule partie commune ».
+
+          Elles n'en faisaient déjà qu'une SUR LE FOND : la grille a perdu son
+          propre titre le 2026-08-14, précisément parce qu'elle passe sous celui
+          de l'automatisation (« deux titres à la suite disaient la même
+          chose »). Ce qui restait, c'était une COUTURE VISUELLE : le cadre à
+          filets d'AutomationTabs se refermait, 112 px de blanc, puis la grille
+          repartait sans cadre, à une autre largeur.
+
+          Trois choses la referment, et aucune ne touche aux composants :
+            · le pas du haut tombe de 112 à 0 — les deux blocs se touchent ;
+            · la grille reçoit LE MÊME cadre que les onglets, `max-w-[86rem]`
+              avec ses filets verticaux, si bien que les deux traits courent
+              sans interruption du titre jusqu'au bas de la grille ;
+            · un filet horizontal marque la jointure : ce n'est plus une fin de
+              section suivie d'un début, c'est un changement de mouvement à
+              l'intérieur d'une même colonne.
+          Le rembourrage latéral passe de la section au cadre, sinon il se
+          compterait deux fois et la grille rentrerait de 48 px sur les onglets. */}
+      <section id="features" className="relative pt-0 pb-0 bg-white dark:bg-black md:dark:bg-background">
         {/* Ambient blue/pink tints — pure radial gradients, NO blur filter
             (same perf rule as the experience section). The section is very
             tall, so blobs are sprinkled along it. Every ellipse fades to
@@ -1402,7 +1424,11 @@ const App = () => {
             (UseCasesBento). Défilement normal : le mur de dézoom est parti
             avec l'ancien composant UseCases. `openBooking` alimente le CTA
             du panneau de présentation (la flèche de la carte FEC). */}
-        <UseCasesBento openBooking={openBooking} />
+        <div className="px-6 md:px-12">
+          <div className="mx-auto max-w-[86rem] border-x border-t border-[#0a2540]/[0.10] px-6 pt-16 dark:border-white/10 md:px-10 md:pt-24">
+            <UseCasesBento openBooking={openBooking} />
+          </div>
+        </div>
 
         {/* Problem — « Votre Excel vous coûte plus que du temps » : masqué
             pour l'instant (à replacer ailleurs / en FAQ plus tard). Réactiver :
@@ -1443,7 +1469,7 @@ const App = () => {
           `#fcfbf7` pour l'orchestration, blanc pur ici.
           ⚠ Hors de toute autre section : elle porte son propre
           `px-6 md:px-12`, imbriquée elle rentrerait deux fois. */}
-      <PlatformShowcase onNavigate={navigateTo} />
+      <PlatformShowcase openBooking={openBooking} />
 
       {/* La section « Nos technologies » (moteur déterministe / RPA natif /
           modèles locaux) a été retirée : le sujet RPA sera traité plus tard,
@@ -1867,20 +1893,10 @@ const App = () => {
                           </div>
                         )}
 
-                        {/* Direct-email alternative to the calendar */}
-                        <div className="mt-2 pt-3 border-t border-gray-100 dark:border-white/10 text-center">
-                          <p className="text-[13px] leading-relaxed text-gray-500 dark:text-gray-400 font-inter">
-                            {t({ fr: "Vous préférez écrire ? Contactez-nous à ", en: "Prefer to write? Reach us at " })}
-                            <a
-                              href={`mailto:${BOOKING_EMAIL}?subject=${encodeURIComponent(
-                                t({ fr: "Demande de rendez-vous Ora", en: "Ora call request" }),
-                              )}`}
-                              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              {BOOKING_EMAIL}
-                            </a>
-                          </p>
-                        </div>
+                        {/* Le même bouton qu'à l'étape du choix, pour qui
+                            arrive ici et change d'avis. Composant partagé :
+                            deux copies auraient divergé au premier mot. */}
+                        <ContactDirect />
                       </div>
                     </>
                   )}

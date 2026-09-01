@@ -31,7 +31,12 @@ import DownloadShowcase from "./DownloadShowcase";
  */
 
 interface PlatformShowcaseProps {
-  onNavigate: (page: "telechargement" | "demo") => void;
+  /* ⚠ `onNavigate` A ÉTÉ RETIRÉ le 2026-08-26 : son unique usage était
+     `onNavigate("demo")`, le bouton vers la web app, et il n'y a plus de
+     navigation depuis ce bloc. Le remettre demanderait de le repasser depuis
+     App.tsx (`navigateTo`). */
+  /** Ouvre la modale de réservation : la seule sortie du bloc désormais. */
+  openBooking: () => void;
 }
 
 const fadeUp = {
@@ -138,7 +143,7 @@ function Shell({
   );
 }
 
-export default function PlatformShowcase({ onNavigate }: PlatformShowcaseProps) {
+export default function PlatformShowcase({ openBooking }: PlatformShowcaseProps) {
   const { t } = useLang();
 
   return (
@@ -187,8 +192,16 @@ export default function PlatformShowcase({ onNavigate }: PlatformShowcaseProps) 
              elle reste servie et joignable par lien direct, elle n'est
              simplement plus annoncée sur l'accueil. `onNavigate` garde
              « telechargement » dans son type pour cette raison. */
-          cta={t({ fr: "Essayer dans le navigateur", en: "Try it in your browser" })}
-          onCta={() => onNavigate("demo")}
+          /* ⚠ LE CTA NE MÈNE PLUS À LA WEB APP (client 2026-08-26 : « enlève
+             tous les boutons qui relient vers la web app »). Il ouvrait
+             /demo — l'essai en ligne — depuis le 2026-08-15. Il ouvre
+             maintenant la réservation, comme tous les appels du site.
+             Le pavé ci-dessus reste vrai pour le TÉLÉCHARGEMENT : la page
+             /telechargement/ora-app existe toujours et n'est simplement pas
+             annoncée ici. La page /demo, elle, reste servie et joignable par
+             lien direct — seuls les boutons qui y menaient sont retirés. */
+          cta={t({ fr: "Réserver un appel", en: "Book a call" })}
+          onCta={openBooking}
         >
           {/* UN SEUL panneau, celui que le client a nommé (« celui avec bilan
               développé, qui reprenait la balance ») : c'est DownloadShowcase,

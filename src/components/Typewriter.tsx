@@ -54,6 +54,16 @@ export default function Typewriter({
   eraseMs = 26,
   /** Pause écran vide avant la phrase suivante. */
   gapMs = 260,
+  /**
+   * Délai entre le moment où le bloc entre à l'écran et la première lettre.
+   *
+   * Les 420 ms d'origine sont un temps de RESPIRATION : sur une phrase-décor
+   * qu'on regarde passer, partir à l'instant même où le bloc apparaît fait
+   * rater le début de la frappe, l'œil n'est pas encore là. Sur une glose qu'on
+   * doit LIRE, en revanche, ils sont du temps mort avant le temps mort.
+   */
+  startMs = 420,
+  loop = true,
 }: {
   phrases: string[];
   className?: string;
@@ -61,6 +71,20 @@ export default function Typewriter({
   holdMs?: number;
   eraseMs?: number;
   gapMs?: number;
+  startMs?: number;
+  /**
+   * `loop={false}` : la DERNIÈRE phrase s'écrit et RESTE. Rien ne s'efface,
+   * rien ne recommence.
+   *
+   * Ajouté le 2026-08-28 pour les gloses d'Atlas (client : « une petite
+   * description qui s'écrit au fur et à mesure de l'animation »). La boucle
+   * par défaut convient à une phrase-décor qu'on regarde passer — l'invite de
+   * saisie d'AutomationTabs, les trois lignes de la planète. Elle ne convient
+   * PAS à un texte qu'on doit LIRE : effacé toutes les 2,2 secondes, il n'est
+   * jamais lu en entier. C'est la seule différence entre les deux usages, d'où
+   * un drapeau et non un second composant.
+   */
+  loop?: boolean;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   // Les phrases arrivent d'un `t()` : une nouvelle référence de tableau à
@@ -93,6 +117,9 @@ export default function Typewriter({
         n++;
         el.textContent = phrase.slice(0, n);
         if (n >= phrase.length) {
+          // Sans boucle, la dernière phrase reste à l'écran : on ne programme
+          // pas l'effacement, la minuterie s'arrête d'elle-même.
+          if (!loop && i >= list.length - 1) return;
           erasing = true;
           timer = window.setTimeout(step, holdMs);
           return;
@@ -118,7 +145,7 @@ export default function Typewriter({
         if (entry.isIntersecting === running) return;
         running = entry.isIntersecting;
         if (running) {
-          timer = window.setTimeout(step, 420);
+          timer = window.setTimeout(step, startMs);
         } else {
           window.clearTimeout(timer);
         }
@@ -131,7 +158,7 @@ export default function Typewriter({
       io.disconnect();
       window.clearTimeout(timer);
     };
-  }, [key, typeMs, holdMs, eraseMs, gapMs]);
+  }, [key, typeMs, holdMs, eraseMs, gapMs, startMs, loop]);
 
   return (
     <>

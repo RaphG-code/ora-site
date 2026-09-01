@@ -613,7 +613,7 @@ export default function DemoPage({ theme, openBooking, onNavigate }: Props) {
         </div>
       </section>
 
-      {annonce && <ComingSoonModal onClose={() => setAnnonce(false)} />}
+      {annonce && <ComingSoonModal onClose={() => setAnnonce(false)} onBookCall={openBooking} />}
     </div>
   );
 }

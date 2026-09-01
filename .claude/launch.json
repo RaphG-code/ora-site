@@ -4,7 +4,10 @@
     {
       "name": "ora-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173,
       "autoPort": true
     },
@@ -12,20 +15,59 @@
       "_comment": "Web app de l'associé (branche main, en ligne sur ora-solution.com). Tourne depuis le worktree git séparé ora-site-demo : aucune fusion avec la branche de travail.",
       "name": "ora-demo",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "/Users/gaugainraphael/ora-site-demo", "run", "dev", "--", "--port", "5199", "--strictPort"],
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/gaugainraphael/ora-site-demo",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5199",
+        "--strictPort"
+      ],
       "port": 5199
     },
     {
       "name": "ora-motion",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4600", "--directory", "motion"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4600",
+        "--directory",
+        "motion"
+      ],
       "port": 4600
     },
     {
       "name": "ferme-montavigny",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8778", "--bind", "127.0.0.1", "--directory", "/Users/gaugainraphael/Desktop/Empire Familial/ferme-de-montavigny"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8778",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/gaugainraphael/Desktop/Empire Familial/ferme-de-montavigny"
+      ],
       "port": 8778
+    },
+    {
+      "_comment": "Frontend Tauri/React d'Ora_V2 (le logiciel), servi seul pour les bancs visuels ?preview-*. Port 1430 pour ne pas toucher au 1420 du vrai tauri dev.",
+      "name": "atlas-studio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/gaugainraphael/Desktop/All/ORA/Site & Software/Ora_V2/atlas",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "1430",
+        "--strictPort"
+      ],
+      "port": 1430
     }
   ]
 }
