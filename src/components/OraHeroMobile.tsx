@@ -44,7 +44,7 @@ const rise = (delay: number) => ({
   transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 });
 
-export default function OraHeroMobile() {
+export default function OraHeroMobile({ openBooking }: { openBooking: () => void }) {
   const { t } = useLang();
 
   /* ⚠ LA SCÈNE N'EST MONTÉE QUE SUR TÉLÉPHONE, et ce n'est pas une
@@ -132,28 +132,34 @@ export default function OraHeroMobile() {
           })}
         </p>
 
-        {/* ⚠ PETIT ET DISCRET, ET C'EST UN RETOUR EN ARRIÈRE ASSUMÉ (client
-            2026-08-23 : « le bouton commencer est bien trop large, fais en
-            sorte qu'il soit bien plus petit et discret »).
-            La veille, la lecture des captures DataSnipper avait donné
-            l'inverse : un BLOC pleine largeur de 50 px de haut, parce que la
-            référence y pose son appel en pavé. Le client a tranché contre, et
-            l'arbitrage est le sien — la pastille reprend donc sa place, plus
-            courte encore qu'avant la passe (232 px pleins → ~150 px calés sur
-            le libellé), plus basse (50 → 38 px), en corps de 13,5 px.
-            L'OMBRE PORTÉE PART AVEC. Une nappe bleue de 32 px sous un bouton de
-            38, c'est ce qui le faisait crier ; « discret » vise autant la halo
-            que la géométrie. Le bleu d'aplat et la forme en pastille restent :
-            ce sont les boutons d'Ora partout ailleurs. */}
-        <a
-          href="https://ora-solution.com/demo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex h-[38px] items-center justify-center gap-1.5 rounded-full bg-[#3b82f6] px-5 font-inter font-semibold text-[13.5px] text-white active:bg-[#2f6fe0]"
+        {/* ⚠ DEUX DÉCISIONS CLIENT QUI SE COMPOSENT, ET C'EST VOULU.
+
+            LA DESTINATION ET LE LIBELLÉ VIENNENT DE main (2026-08-26) : le lien
+            vers la web app est retiré du SITE ENTIER, les deux heros portent le
+            même appel, qui est la réservation. Voir le pavé de OraHeroDemo.
+            Remettre `href="…/demo"` ici rétablirait un lien que main a supprimé
+            partout : c'est structurel, pas cosmétique.
+
+            LA GÉOMÉTRIE VIENT DE CETTE BRANCHE (client 2026-08-23 : « le bouton
+            commencer est bien trop large, fais en sorte qu'il soit bien plus
+            petit et discret »). Pastille de 38 px en corps de 13,5 px, SANS
+            ombre portée — une nappe bleue de 32 px sous un bouton de 38, c'est
+            ce qui le faisait crier ; « discret » visait autant le halo que la
+            géométrie.
+            ⚠ Le bloc pleine largeur de 52 px que portait main n'est PAS une
+            re-décision contre le 23/08 : c'est l'état d'avant, que main n'a
+            jamais eu à corriger puisque la demande du client n'a vécu que sur
+            cette branche. main ne changeait que la destination. Les deux
+            arbitrages ne se contredisent donc nulle part.
+            ⚠ Ne pas remettre `w-full`, ni `h-[52px]`, ni l'ombre. */}
+        <button
+          type="button"
+          onClick={openBooking}
+          className="mt-6 inline-flex h-[38px] items-center justify-center gap-1.5 rounded-full bg-[#3b82f6] px-5 font-inter font-semibold text-[13.5px] text-white active:bg-[#2563eb]"
         >
-          {t({ fr: "Commencer", en: "Get started" })}
+          {t({ fr: "Réserver un appel", en: "Book a call" })}
           <ArrowRight className="h-[15px] w-[15px]" />
-        </a>
+        </button>
 
         {/* ⚠ MÊME RANGÉE DE PREUVE QUE LE HERO DE BUREAU (2026-08-21), au mot
             près : les deux doivent dire la même chose, c'est le même écran vu
@@ -239,13 +245,14 @@ export default function OraHeroMobile() {
       {/* ⚠ PAS DE SECOND BOUTON ICI (client 2026-08-20 : « why did you add the
           Book a Call button? there is already a button for it »). Un pavé noir
           pleine largeur « Réserver un appel » suivait la réplique du logiciel ;
-          il n'existe nulle part sur le bureau, dont le hero ne porte qu'un seul
-          appel — « Commencer » — et dont le « Réserver un appel » bleu vit plus
-          bas, après la démo, en `hidden md:flex`. Deux boutons pleine largeur
-          empilés sur un même écran de téléphone se disputaient le clic.
-          La prise de rendez-vous reste atteignable de partout : le bouton
-          « Réserver un appel » de la barre de navigation, et le CTA de fin de
-          page. Ne pas remettre un troisième chemin ici. */}
+          il n'existe nulle part sur le bureau, et deux boutons empilés sur un
+          même écran de téléphone se disputaient le clic.
+          ⚠ La règle vaut ENCORE PLUS depuis le 2026-08-26 : l'appel du hero
+          MÈNE LUI-MÊME à la réservation et en porte le libellé (le lien vers la
+          web app est retiré du site). Un second « Réserver un appel » ici serait
+          donc le même bouton, écrit deux fois à trois centimètres d'écart.
+          La prise de rendez-vous reste par ailleurs atteignable de la barre de
+          navigation et du CTA de fin de page. Ne pas remettre un chemin ici. */}
     </div>
   );
 }

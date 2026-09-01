@@ -1,28 +1,19 @@
-import { useState, useEffect, useRef } from "react";
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { AnimatePresence, motion, useScroll, type Variants } from "framer-motion";
 import {
   ArrowRight,
   Bell,
   CalendarCheck,
-  FileOutput,
-  FolderSearch,
-  GitCompare,
-  Globe,
-  History,
-  LayoutDashboard,
   ListChecks,
   ScanSearch,
   Search,
   Send,
   ShieldCheck,
-  Users,
   Waypoints,
   type LucideIcon,
 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
-import { MockupHome, MockupManager } from "./AtlasMockups";
-import InViewVideo, { VideoWithScrubber } from "./InViewVideo";
-import ScaleToFit from "./ScaleToFit";
+import { VideoWithScrubber } from "./InViewVideo";
 import AtlasSlideVisual, { type AtlasVisual } from "./AtlasSlideVisual";
 import Typewriter from "./Typewriter";
 import AtlasLiveAsk from "./AtlasLiveAsk";
@@ -117,6 +108,59 @@ const ATLAS_CSS = `
    Le controle qui l'a revele : relever le position CALCULE de la scene, il
    doit dire sticky. (Pas d'accent grave dans ce bloc : template literal.) */
 .at-sky{overflow:hidden;background:#000}
+/* ── LA PLAQUE BLEUE QUI ACCUEILLE LES SCENES ANIMEES (2026-08-29) ──────────
+   Client : les animations jouees jusqu'ici sur le noir doivent se faire DANS
+   le cadre bleu des vignettes. Or elles ont ete dessinees pour un fond noir :
+   cinq motifs utilitaires y posent du blanc translucide (libelles d'etapes,
+   pilules fantomes, filets) qui devient invisible sur une plaque claire.
+   Plutot que de retoucher trois fichiers de scenes qui servent aussi
+   ailleurs, la plaque REMAPPE ces cinq motifs par selecteurs d'attribut :
+   la classe utilitaire reste dans le JSX, seule sa couleur change ici.
+   (Pas d'accent grave dans ce bloc : template literal.)
+   ⚠ FRAGILE PAR NATURE : si une scene introduit un sixieme motif sur-noir,
+   il faudra l'ajouter ici. Le controle : chaque texte de scene doit rester
+   lisible en capture sur la plaque. */
+.at-plate [class*="text-white/85"]{color:#111827!important}
+.at-plate [class*="text-white/70"]{color:#42506b!important}
+.at-plate [class*="border-white/"]{border-color:rgba(10,37,64,.16)!important}
+.at-plate [class*="bg-white/[0.06]"]{background:#fff!important}
+
+/* ── LA TRANSFORMATION SQUELETTE → CONTENU (2026-08-30, seconde passe) ─────
+   Client, apres l'envol en cascade : « des elements qui se transforment sous
+   nos yeux, sinon ca ne fait juste pas de sens ». Il a raison sur le fond :
+   des blocs qui s'envolent RACONTENT un depart, pas une transformation.
+
+   Ce que la vignette EST rend la transformation possible : un SQUELETTE de la
+   scene — les memes cartes blanches, aux memes places, avec des barres vides
+   la ou la scene a du texte. Le morphing juste est donc une MISE AU POINT :
+     · la vignette grossit d'un souffle (1 → 1,03) et se dissout dans un flou
+       de 9 px — ses barres perdent leurs bords, deviennent de la matiere ;
+     · la scene vivante emerge du meme centre, du meme flou, en net —
+       la matiere reprend forme, avec du texte la ou il y avait des barres.
+   Les deux courbes se croisent a mi-course : il y a toujours quelque chose de
+   visible, jamais deux choses nettes. L'oeil lit UN objet qui gagne du detail,
+   pas deux images echangees.
+
+   ⚠ LES DEUX ANIMATIONS DOIVENT RESTER JUMELLES : meme duree a 40 ms pres,
+   memes courbes douces (pas de ressort ici, le ressort vit DANS la scene qui
+   demarre ses cascades internes au meme moment). Si l'une change, changer
+   l'autre, sinon on retombe sur un fondu qui « ne fait pas de sens ».
+   Le flou est borne a un element de ~560 px, une fois, hors defilement : cout
+   raisonnable, rien a voir avec les flous plein ecran interdits ailleurs.
+   (Pas d'accent grave dans ce bloc : template literal.) */
+.at-fige-sortie .av-stage{animation:atFigeFond 430ms cubic-bezier(.4,0,.2,1) both;will-change:opacity,filter,transform}
+@keyframes atFigeFond{
+  0%{opacity:1;filter:blur(0);transform:scale(1)}
+  100%{opacity:0;filter:blur(9px);transform:scale(1.03)}}
+.at-scene-entre{animation:atSceneNette 470ms cubic-bezier(.22,1,.36,1) both}
+@keyframes atSceneNette{
+  0%{opacity:0;filter:blur(9px);transform:scale(.972)}
+  60%{opacity:1}
+  100%{opacity:1;filter:blur(0);transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){
+  .at-fige-sortie .av-stage{animation:none;opacity:0}
+  .at-scene-entre{animation:none}}
+
 .at-lines{position:absolute;inset:0;
   background:repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 78px);
   -webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 22%, #000 72%, transparent 100%);
@@ -223,6 +267,10 @@ const ATLAS_CAPS: {
   icon: LucideIcon;
   label: { fr: string; en: string };
   desc: { fr: string; en: string };
+  /** LA GLOSE, sous l'animation de droite. La liste dit ce qu'Atlas FAIT,
+   *  la glose dit ce que le client Y GAGNE : jamais deux fois le même texte à
+   *  deux colonnes d'écart. Aucune n'invente de chiffre ni de promesse. */
+  apport: { fr: string; en: string };
 }[] = [
   {
     icon: Search,
@@ -230,6 +278,10 @@ const ATLAS_CAPS: {
     desc: {
       fr: "Posez la question en français. Atlas ouvre vos fichiers, pas un moteur de recherche.",
       en: "Ask in plain words. Atlas opens your files, not a search engine.",
+    },
+    apport: {
+      fr: "Vous arrêtez de fouiller vos dossiers. La réponse arrive avec le fichier qui la porte, et le temps passé à chercher vous revient.",
+      en: "You stop digging through folders. The answer arrives with the file that holds it, and the time spent searching comes back to you.",
     },
   },
   {
@@ -239,6 +291,10 @@ const ATLAS_CAPS: {
       fr: "Chaque chiffre garde le chemin qui y mène, du livrable jusqu'à la pièce d'origine.",
       en: "Every figure keeps the path that leads to it, from the deliverable to the source document.",
     },
+    apport: {
+      fr: "Un chiffre contesté se justifie sans rouvrir le dossier : le chemin jusqu'à la pièce d'origine est déjà écrit, vous n'avez plus à le refaire.",
+      en: "A disputed figure is justified without reopening the file: the path back to the source document is already written, you no longer rebuild it.",
+    },
   },
   {
     icon: ListChecks,
@@ -246,6 +302,10 @@ const ATLAS_CAPS: {
     desc: {
       fr: "Ce qui est bouclé, ce qui attend, ce qui bloque, sans faire le tour des dossiers.",
       en: "What is closed, what is waiting, what is stuck, without touring the folders.",
+    },
+    apport: {
+      fr: "Vous savez où en est chaque dossier sans faire le tour de l'équipe, et vous arbitrez sur un état à jour plutôt que sur une impression.",
+      en: "You know where every file stands without touring the team, and you decide on an up-to-date picture rather than an impression.",
     },
   },
   {
@@ -267,6 +327,10 @@ const ATLAS_CAPS: {
       fr: "Information réglementaire, échéance, pièce ajoutée : la notification arrive, le dossier client concerné avec elle.",
       en: "A regulatory update, a deadline, a new document: the notification lands, with the client file concerned.",
     },
+    apport: {
+      fr: "La veille ne repose plus sur votre mémoire. Ce qui change vous trouve, déjà rattaché au dossier client que cela concerne.",
+      en: "Keeping watch no longer rests on your memory. What changes finds you, already tied to the client file it concerns.",
+    },
   },
   /* ⚠ TROIS CAPACITÉS AJOUTÉES le 2026-08-23 (client, capture du hub du
      logiciel à l'appui : « mets des caractéristiques d'ici qui sont plus
@@ -284,6 +348,10 @@ const ATLAS_CAPS: {
       fr: "Une plaquette ou un dossier déposé : soldes, points clés et pistes de mission se lisent immédiatement.",
       en: "Drop in a brochure or a file: balances, key points and engagement leads read out immediately.",
     },
+    apport: {
+      fr: "Vous déposez le document, vous récupérez sa lecture. Vous entrez en rendez-vous avec les points clés, pas avec une pile à dépouiller.",
+      en: "You drop the document in and get its reading back. You walk into the meeting with the key points, not a stack to work through.",
+    },
   },
   {
     icon: Send,
@@ -291,6 +359,10 @@ const ATLAS_CAPS: {
     desc: {
       fr: "Qui doit quoi, pour quand : les pièces manquantes sont relancées avant qu'elles ne bloquent.",
       en: "Who owes what, by when: missing documents are chased before they block the file.",
+    },
+    apport: {
+      fr: "Les relances partent sans que vous y pensiez. Le dossier avance pendant que vous travaillez sur autre chose, et plus rien ne dort faute d'une pièce.",
+      en: "The chasers go out without you thinking about it. The file moves forward while you work on something else, and nothing stalls for a missing document.",
     },
   },
   {
@@ -300,6 +372,10 @@ const ATLAS_CAPS: {
       fr: "Échéances en retard et du jour, dossiers dormants, échecs à reprendre : le point, chaque matin.",
       en: "Overdue and today's deadlines, dormant files, failures to retry: the rundown, every morning.",
     },
+    apport: {
+      fr: "Votre matinée commence par une liste prête, pas par un inventaire. Vous choisissez par quoi commencer au lieu de reconstituer ce qui reste.",
+      en: "Your morning starts with a ready list, not an inventory. You choose what to start with instead of piecing together what is left.",
+    },
   },
   {
     icon: ShieldCheck,
@@ -308,219 +384,108 @@ const ATLAS_CAPS: {
       fr: "Traitement local. Vos fichiers restent sur vos postes, y compris pendant l'analyse.",
       en: "Local processing. Your files stay on your machines, including during analysis.",
     },
+    apport: {
+      fr: "Rien ne part en ligne pour qu'Atlas fonctionne. Vous adoptez l'assistant sans toucher à vos règles de confidentialité ni déplacer une donnée client.",
+      en: "Nothing goes online for Atlas to work. You adopt the assistant without touching your confidentiality rules or moving a single client record.",
+    },
   },
 ];
 
-/** ── CE QU'ON PEUT DEMANDER À ATLAS ────────────────────────────────────────
- *  Une vue = un titre à gauche, une SCÈNE à droite (AtlasSlideVisual).
- *  Les six sont volontairement de NATURES DIFFÉRENTES (retrouver, contrôler,
- *  produire, suivre, tracer, comparer) : c'est ce qui montre l'étendue, là où
- *  six variantes de la même question ne montreraient qu'une fonction.
+/** ── LE VISUEL DE CHAQUE ARGUMENT ─────────────────────────────────────────
+ *  Client 2026-08-29 : « mets ces encadrés à droite de la phrase qui est
+ *  sélectionnée », en désignant les vignettes illustrées de « Ce qu'Atlas sait
+ *  faire ». La colonne de droite montre donc, pour l'argument encadré, la scène
+ *  correspondante d'AtlasSlideVisual.
  *
- *  ⚠ `answer` ET `sources` ONT ÉTÉ RETIRÉS le 2026-08-15, avec le panneau
- *  d'assistant qui les affichait. Ils faisaient répondre Atlas en langage
- *  naturel et citer ses fichiers, c'est-à-dire qu'ils montraient une fonction
- *  qui n'existe pas dans le logiciel (voir le pavé d'AtlasSlideVisual.tsx). Les
- *  garder en données non rendues n'aurait servi à rien : ce qui doit rester
- *  lisible d'une vue, c'est son titre et sa phrase, et ils sont là. Leur texte
- *  est dans l'historique git de ce fichier à cette date.
+ *  ⚠ SIX SCÈNES POUR HUIT ARGUMENTS : deux se répètent forcément. Elles sont
+ *  placées le plus loin possible l'une de l'autre dans la série (2 et 5, 3 et
+ *  7) pour qu'on ne voie jamais la même deux fois de suite en défilant.
+ *  Le rapprochement est fait sur le SUJET de la scène, pas sur son titre :
+ *  « équipe » montre des statuts, ce qui vaut aussi bien pour ce qui reste à
+ *  valider que pour les pièces qu'on relance.
  *
- *  ⚠ « SUIVI CLIENT » A ÉTÉ RETIRÉ le même jour, une vue après avoir été
- *  ajouté. La fonctionnalité n'est pas construite : c'est l'item n°1 du
- *  reste-à-faire côté logiciel, bloqué par une décision produit. Toute cette
- *  passe consiste à cesser d'annoncer ce qui n'existe pas ; garder l'onglet
- *  avec une pastille « Bientôt » aurait réintroduit le problème en miniature,
- *  et invité la question « et les six autres ? ». Il y a un visuel prêt pour
- *  lui (suivi-client-abstrait.html) : le remettre, c'est réécrire cette entrée
- *  et remettre `Contact` dans les imports. */
-type UseCase = {
-  /** L'icône de l'onglet. Elle n'illustre pas la scène, elle aide à retrouver
-   *  un onglet du regard une fois qu'on en a essayé trois. */
-  icon: LucideIcon;
-  tag: { fr: string; en: string };
-  /** LE TITRE, en deux encres, PROPRE À CHAQUE VUE (client 2026-08-15 :
-   *  « que la phrase Posez votre question change en fonction du choix de
-   *  l'utilisateur dans la barre d'options »). `a` est la question qu'on se
-   *  pose, en blanc ; `b` est ce qu'Atlas en fait, en gris. */
-  head: { a: { fr: string; en: string }; b: { fr: string; en: string } };
-  line: { fr: string; en: string };
-  /** La scène rendue à droite. */
-  visual: AtlasVisual;
-  /** La demande écrite dans la carte blanche de la scène. Les doubles crochets
-   *  marquent la référence mise en bleu : `[[Nexio SAS]]`, ou `[[f:Modèle]]`
-   *  quand elle porte l'icône de fichier. Voir renderAsk. */
-  ask: { fr: string; en: string };
-  /** Ce que la scène MONTRE, pour un lecteur d'écran : elle n'est faite que de
-   *  blocs vides, il n'y a rien à y lire. */
-  alt: { fr: string; en: string };
+ *  ⚠ DEPUIS LE 2026-08-29 ELLE NE CHOISIT PLUS UNE VIGNETTE MAIS UN DÉGRADÉ
+ *  DE PLAQUE : le client remet les scènes ANIMÉES dans le cadre bleu. La carte
+ *  sert donc à garder la variété de fonds de la série des vignettes (deux
+ *  finissent turquoise, deux plongent au bleu profond) sans monter les
+ *  vignettes elles-mêmes. Les dégradés sont recopiés d'AV_CSS au caractère
+ *  près — si AtlasSlideVisual les retouche un jour, recopier ici. */
+const CAP_VISUELS: AtlasVisual[] = [
+  "bouclage",     // Cherche dans vos dossiers
+  "controle",     // Relie chaque fichier à ses sources
+  "equipe",       // Montre ce qui reste à valider
+  "tracabilite",  // Signale ce qui impacte un dossier
+  "livrables",    // Lit les documents qu'on lui dépose
+  "equipe",       // Relance les pièces manquantes
+  "comparaison",  // Prépare votre journée
+  "tracabilite",  // Ne sort jamais de chez vous
+];
+
+/** Les fonds de plaque, recopiés d'AV_CSS (AtlasSlideVisual) au caractère
+ *  près. Voir le pavé de CAP_VISUELS. */
+const PLATE_FONDS: Record<AtlasVisual, string> = {
+  bouclage:
+    "radial-gradient(86% 70% at 30% 88%, rgba(255,255,255,.62) 0%, rgba(216,244,235,.42) 32%, rgba(255,255,255,0) 64%)," +
+    "linear-gradient(172deg,#eff5ff 0%,#dde9fd 18%,#b0cdf8 42%,#6ba2ef 68%,#4aa8cd 87%,#63c8a8 100%)",
+  controle:
+    "radial-gradient(88% 74% at 26% 84%, rgba(255,255,255,.72) 0%, rgba(214,244,234,.5) 30%, rgba(255,255,255,0) 62%)," +
+    "linear-gradient(172deg,#eef4ff 0%,#dce8fd 17%,#aecbf8 41%,#5f9bee 66%,#43a5cf 85%,#5ac5a6 100%)",
+  livrables:
+    "linear-gradient(178deg,#eef4ff 0%,#dbe7fd 24%,#a8c6f8 52%,#4a86f2 80%,#1a56db 100%)",
+  equipe:
+    "linear-gradient(178deg,#eef4ff 0%,#dbe7fd 22%,#a8c6f8 50%,#4a86f2 79%,#1a56db 100%)",
+  tracabilite:
+    "linear-gradient(174deg,#f2f6ff 0%,#dfe9fd 20%,#b6d0f9 44%,#7aa9f1 68%,#3f7fe8 88%,#1f5fdd 100%)",
+  comparaison:
+    "radial-gradient(84% 68% at 72% 86%, rgba(255,255,255,.58) 0%, rgba(214,244,234,.40) 34%, rgba(255,255,255,0) 66%)," +
+    "linear-gradient(174deg,#eff5ff 0%,#dce8fd 20%,#aecbf8 44%,#679fee 70%,#45a6cd 88%,#5fc7a7 100%)",
 };
 
-const USE_CASES: UseCase[] = [
-  {
-    icon: FolderSearch,
-    tag: { fr: "Bouclage", en: "Closing" },
-    head: {
-      a: { fr: "Où en est ce dossier ?", en: "Where does this file stand?" },
-      b: { fr: "Atlas fait le tour des pièces.", en: "Atlas goes through the documents." },
-    },
-    line: {
-      fr: "Retrouvez une pièce sans rouvrir dix dossiers.",
-      en: "Find a document without reopening ten folders.",
-    },
-    visual: "bouclage",
-    ask: {
-      fr: "Où en est le bouclage de [[Nexio SAS]] ?",
-      en: "Where does the [[Nexio SAS]] closing stand?",
-    },
-    alt: {
-      fr: "Une liste de cinq pièces : quatre cochées, une encore ouverte.",
-      en: "A list of five documents: four ticked, one still open.",
-    },
+/* ── LE SENS DU GESTE (2026-08-29) ────────────────────────────────────────
+ * MESURÉ : à la remontée, aucune perte de performance (16,8 ms de moyenne des
+ * deux côtés, zéro image au-delà de 30 ms). Le défaut était une FAUTE DE
+ * DIRECTION : la scène sortante partait toujours par le haut et l'entrante
+ * venait toujours du bas. À la descente ça accompagne le geste ; à la remontée
+ * la même animation joue à contresens du doigt. C'est ce désaccord qu'on lit
+ * comme « pas fluide », et il ne peut se voir QU'EN REMONTANT.
+ * `sens` ne retourne que les composantes VERTICALES. Le décalage horizontal
+ * reste indexé sur l'argument : c'est lui qui garantit que deux scènes
+ * consécutives n'entrent jamais du même côté.
+ *
+ * ⚠ IL PASSE PAR LE `custom` D'ANIMATEPRESENCE, ET C'EST OBLIGATOIRE. Un objet
+ * `exit` écrit en clair est FIGÉ au rendu où l'élément a été créé : la scène
+ * qui sort emporterait le sens de l'ANCIEN geste, et le premier changement de
+ * direction — le seul moment où l'œil regarde — sortirait du mauvais côté.
+ *
+ * ⚠ NOMS DISTINCTS DE CEUX DES SCÈNES (avant/pose/apres et non
+ * initial/enter/exit) : les scènes d'AtlasLive* posent leur label à la main,
+ * la propagation s'arrête donc là ; mais si l'une l'oubliait, un nom commun
+ * ferait jouer la mauvaise variante à ses enfants. */
+type SensScene = { sens: number; i: number };
+const SCENE_VARIANTS: Variants = {
+  avant: ({ sens, i }: SensScene) => ({
+    opacity: 0,
+    scale: 0.97,
+    x: [0, 44, -44][i % 3],
+    y: sens * (i % 3 === 0 ? 26 : 8),
+  }),
+  pose: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring", stiffness: 380, damping: 32, mass: 0.9 },
   },
-  {
-    icon: Waypoints,
-    tag: { fr: "Contrôle", en: "Control" },
-    head: {
-      a: { fr: "D'où sort ce chiffre ?", en: "Where does this figure come from?" },
-      b: { fr: "Atlas remonte la chaîne.", en: "Atlas walks back up the chain." },
-    },
-    line: {
-      fr: "Remontez un chiffre jusqu'à sa source.",
-      en: "Trace a figure back to its source.",
-    },
-    visual: "controle",
-    ask: {
-      fr: "D'où vient la marge affichée dans le [[f:reporting de juin]] ?",
-      en: "Where does the margin in the [[f:June reporting]] come from?",
-    },
-    alt: {
-      fr: "Une source, un retraitement et le chiffre affiché, reliés par un fil.",
-      en: "A source, a rework step and the resulting figure, linked by a thread.",
-    },
-  },
-  {
-    icon: FileOutput,
-    tag: { fr: "Livrables", en: "Deliverables" },
-    head: {
-      a: { fr: "Il vous faut un livrable ?", en: "Need a deliverable?" },
-      b: { fr: "Atlas le monte sur vos modèles.", en: "Atlas builds it on your templates." },
-    },
-    line: {
-      fr: "Montez un livrable à partir de ce qui existe déjà.",
-      en: "Build a deliverable from what already exists.",
-    },
-    visual: "livrables",
-    ask: {
-      fr: "Montez la synthèse du comité sur [[f:Modèle comité]], à partir du dernier [[f:reporting validé]]",
-      en: "Build the committee summary on [[f:Committee template]], from the last [[f:approved reporting]]",
-    },
-    alt: {
-      fr: "Deux documents existants en arrière-plan, le livrable monté devant.",
-      en: "Two existing documents behind, the built deliverable in front.",
-    },
-  },
-  {
-    icon: Users,
-    tag: { fr: "Suivi d'équipe", en: "Team tracking" },
-    head: {
-      a: { fr: "Qui attend quoi ?", en: "Who is waiting on what?" },
-      b: { fr: "Atlas fait le point pour vous.", en: "Atlas takes stock for you." },
-    },
-    line: {
-      fr: "Voyez qui attend quoi, sans faire le tour des bureaux.",
-      en: "See who is waiting on what, without touring the desks.",
-    },
-    visual: "equipe",
-    ask: {
-      fr: "Où en est [[l'équipe]] cette semaine ?",
-      en: "Where does [[the team]] stand this week?",
-    },
-    alt: {
-      fr: "Quatre couloirs d'avancement, un par personne.",
-      en: "Four progress lanes, one per person.",
-    },
-  },
-  {
-    icon: History,
-    tag: { fr: "Traçabilité", en: "Audit trail" },
-    head: {
-      a: { fr: "Qui a touché à quoi ?", en: "Who touched what?" },
-      b: { fr: "Atlas garde le journal.", en: "Atlas keeps the log." },
-    },
-    line: {
-      fr: "Sachez qui a modifié quoi, et quand.",
-      en: "Know who changed what, and when.",
-    },
-    visual: "tracabilite",
-    ask: {
-      fr: "Qui a touché à ce [[fichier]], et quand ?",
-      en: "Who touched this [[file]], and when?",
-    },
-    alt: {
-      fr: "Un fil vertical et cinq événements datés, qui s'efface vers le bas.",
-      en: "A vertical thread with five dated events, fading downwards.",
-    },
-  },
-  {
-    icon: GitCompare,
-    tag: { fr: "Comparaison", en: "Comparison" },
-    head: {
-      a: { fr: "Deux périodes à comparer ?", en: "Two periods to compare?" },
-      b: { fr: "Atlas monte le comparatif.", en: "Atlas builds the comparison." },
-    },
-    line: {
-      fr: "Comparez deux périodes sans reconstruire un tableau.",
-      en: "Compare two periods without rebuilding a table.",
-    },
-    visual: "comparaison",
-    ask: {
-      fr: "Qu'est-ce qui a bougé entre les [[deux versions]] ?",
-      en: "What moved between the [[two versions]]?",
-    },
-    alt: {
-      fr: "Deux panneaux jumeaux, une seule ligne diffère.",
-      en: "Two twin panels, a single row differs.",
-    },
-  },
-];
-
-/* `RESERVE_VISUAL` vivait ici : l'interrupteur dev / production posé le
-   2026-08-21 pour que la moitié droite du bloc « Atlas en clair », alors vide,
-   ne s'affiche qu'en local (« garde-la comme elle est pour le localhost »).
-   SUPPRIMÉ le 2026-08-22, comme son pavé l'exigeait : le visuel attendu existe
-   (AtlasLiveAsk, l'animation façon DataSnipper), la colonne est donc montée
-   partout et les deux mises en page n'ont plus de raison d'être. Ce qu'on voit
-   sous `npm run dev` est de nouveau ce qui est déployé. */
-
-/* `NOISE` et `TILE_ART` vivaient ici : le grain en data-URI et les six dégradés
-   qui habillaient les tuiles abstraites de la première version de la grille.
-   Ils sont partis le 2026-08-19 avec elles, les six vraies scènes
-   (AtlasSlideVisual) ayant repris leur place. */
-
-type TabId = "galaxy" | "dashboard" | "manager";
-
-type Tab = {
-  id: TabId;
-  icon: LucideIcon;
-  /** Solid color for the circular icon badge (Monday-style). */
-  iconBg: string;
-  label: string;
+  apres: ({ sens }: SensScene) => ({
+    opacity: 0,
+    y: sens * -20,
+    scale: 0.985,
+    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
+  }),
 };
 
 export default function AtlasShowcase({ openBooking }: { openBooking: () => void }) {
   const { t } = useLang();
-  // Tab state for the lower demo area (pills above the Atlas video). Galaxy
-  // shows the video; the other tabs reuse their mockups. The top mockup is no
-  // longer tabbed — it always shows the interactive galaxy.
-  const [bottomTab, setBottomTab] = useState<TabId>("galaxy");
-
-  /* ── L'ÉTAT DU CARROUSEL DES USAGES A ÉTÉ RETIRÉ (2026-08-19) ────────────
-   * Il vivait ici : `slide`, `dir`, la fonction `go`, la vue courante `uc`, et
-   * un effet qui recentrait la barre d'onglets défilante sur l'onglet actif.
-   * Les six usages sont désormais rendus TOUS ENSEMBLE, en grille façon salle
-   * de presse OpenAI (voir le bloc plus bas) : plus rien à l'écran ne dépend
-   * d'un index, il n'y a donc plus d'index à tenir.
-   * `slideVariants` et `cardVariants`, en bas de fichier, sont partis avec. */
 
   /* ── LA MONTÉE DE LA PLANÈTE, ÉCRITE AU DÉFILEMENT ────────────────────────
    * Client 2026-08-14 : « une animation où l'écran se bloque et il y a
@@ -540,36 +505,9 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
   const skyTypeRef = useRef<HTMLDivElement>(null);
   const skyLineRef = useRef<HTMLDivElement>(null);
 
-  /* ── LE BLANC MONTE SUR LE NOIR ────────────────────────────────────────────
-   * Client 2026-08-20 : « quand on est tout en bas du fond noir et qu'on voit
-   * le fond blanc arriver en défilant, fais la même animation de fond blanc qui
-   * monte vers nous, plutôt que le fond noir qui disparaît simplement ».
-   *
-   * Avant : la section blanche défilait comme n'importe quelle section, le noir
-   * sortait par le haut, et la bascule se lisait comme une coupure franche.
-   * Maintenant : la feuille blanche REMONTE de 88 px de plus que le défilement
-   * pendant qu'elle entre, arrondie et ombrée par le haut. Elle passe donc
-   * PAR-DESSUS le noir au lieu de le suivre.
-   *
-   * ⚠ PARALLAXE ET NON ÉPINGLAGE, et c'est un choix contraint. Le vrai rideau
-   * (`position:sticky` sur le bloc noir, la feuille blanche qui glisse dessus)
-   * demanderait d'épingler la section vidéo — 820 px de haut, donc plus haute
-   * que beaucoup de fenêtres de portable, où un élément sticky se comporte tout
-   * autrement. Et ce fichier porte DÉJÀ un épinglage, celui de la scène de la
-   * planète, dont le pavé plus bas documente à quel point il est fragile. Deux
-   * mécanismes d'épinglage dans un même composant, c'est la panne assurée.
-   * La parallaxe donne le même mouvement et ne dépend d'aucune hauteur.
-   *
-   * `offset` : de « le haut de la section touche le bas de l'écran » à « le
-   * haut de la section atteint le milieu de l'écran ». Le mouvement est donc
-   * terminé quand la feuille est bien installée, il ne traîne pas ensuite.
-   */
-  const riseRef = useRef<HTMLElement>(null);
-  const { scrollYProgress: riseProgress } = useScroll({
-    target: riseRef,
-    offset: ["start end", "start center"],
-  });
-  const riseY = useTransform(riseProgress, [0, 1], [88, 0]);
+  /* riseRef / riseY (le rideau blanc au défilement) et l'état du carrousel du
+     bas (bottomTab) vivaient ici : partis avec la section blanche le
+     2026-08-30. */
 
   /* ── L'ENCADRÉ DES CAPACITÉS, PILOTÉ AU DÉFILEMENT ────────────────────────
    * Client 2026-08-22 : « l'écran est figé au scroll, et c'est l'encadré qui
@@ -604,39 +542,153 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
   const capTrackRef = useRef<HTMLElement>(null);
   const capListRef = useRef<HTMLUListElement>(null);
   const [activeCap, setActiveCap] = useState(0);
+  /* ── DEUX INDEX, ET C'EST TOUT LE CORRECTIF DE FLUIDITÉ (2026-08-28) ──────
+   * MESURÉ AVANT DE TOUCHER À QUOI QUE CE SOIT, à la molette : SEPT MONTAGES
+   * DE SCÈNE en 250 ms à la descente, QUATORZE à la remontée (l'index
+   * oscillait aux frontières). Chaque scène d'AtlasLive* est une machine à
+   * états complète — minuteries, IntersectionObserver, ressorts, des centaines
+   * de nœuds. En traverser sept au vol, c'est les construire toutes pour n'en
+   * voir aucune.
+   *   · `activeCap` suit le doigt SANS DÉLAI : il porte l'encadré et
+   *     l'accordéon, c'est-à-dire le retour visuel du défilement.
+   *   · `sceneCap` ne bouge QU'À L'ARRÊT : il monte l'animation et sa glose.
+   *     Un coup de molette ne monte donc plus qu'UNE scène. */
+  const [sceneCap, setSceneCap] = useState(0);
+  /** 1 en descendant, -1 en remontant. Voir le pavé de SCENE_VARIANTS. */
+  const [sens, setSens] = useState(1);
   const [capFrame, setCapFrame] = useState({ top: 0, height: 0 });
   const { scrollYProgress: capProgress } = useScroll({
     target: capTrackRef,
     offset: ["start start", "end end"],
   });
-  useEffect(
-    () =>
-      capProgress.on("change", (v) => {
-        setActiveCap(
-          Math.max(0, Math.min(ATLAS_CAPS.length - 1, Math.floor(v * ATLAS_CAPS.length))),
-        );
-      }),
-    [capProgress],
-  );
+
+  /* ⚠ ZONE MORTE AUX FRONTIÈRES. `Math.floor(v * 8)` nu bascule au millième
+     près : arrêté PILE sur une frontière — ce qui arrive à chaque fin de
+     course inertielle — l'index faisait l'aller-retour, et chaque aller-retour
+     remontait une scène. On ne quitte l'argument courant qu'une fois la
+     frontière franchie de 15 % de segment, soit ~49 px, invisible à l'usage.
+     ⚠ ET ON N'ÉCRIT L'ÉTAT QU'AU CHANGEMENT : le handler tire à chaque image,
+     l'ancienne version appelait donc setState soixante fois par seconde pour
+     la même valeur. */
+  useEffect(() => {
+    const N = ATLAS_CAPS.length;
+    const MARGE = 0.15;
+    let courant = 0;
+    return capProgress.on("change", (v) => {
+      const brut = Math.max(0, Math.min(N - 1e-4, v * N));
+      const vise = Math.floor(brut);
+      if (vise === courant) return;
+      const frontiere = vise > courant ? courant + 1 : courant;
+      if (Math.abs(brut - frontiere) < MARGE) return;
+      courant = vise;
+      setActiveCap(vise);
+    });
+  }, [capProgress]);
+
+  /* ⚠ 140 ms, ET LE NOMBRE N'EST PAS LIBRE : plus LONG que l'intervalle entre
+     deux franchissements pendant un coup de molette (~30 ms mesurés), sinon
+     les scènes intermédiaires passent quand même ; plus COURT que ce qui se
+     remarque à l'arrêt, où deux arguments sont séparés de plusieurs secondes.
+     Au montage `sceneCap === activeCap` : la première scène est là tout de
+     suite, l'entrée dans la section ne passe pas par l'attente. */
+  /* ── LE TEMPS FIGÉ DE LA PLAQUE (2026-08-30) ─────────────────────────────
+   * Client : « on part du design de l'encadré, une demi-seconde de latence,
+   * et les éléments s'animent tout d'un coup ». À chaque argument, la plaque
+   * ouvre donc sur la VIGNETTE FIXE (le design d'origine de l'encadré), la
+   * tient 650 ms, puis la scène vivante prend le relais — et comme les scènes
+   * entrent en ressort avec leurs cascades internes, le passage se lit
+   * exactement comme « les éléments se mettent à bouger ».
+   * 650 ms : assez long pour que l'image fixe soit VUE comme une image (sous
+   * ~400 ms elle se lirait comme un raté de chargement), assez court pour ne
+   * pas faire attendre l'animation promise. */
+  const [vif, setVif] = useState(false);
+  /* `sortie` arme l'animation de réveil sur la vignette ; `figeOn` la garde
+   * montée le temps que ses blocs finissent de décoller (560 ms + cascade).
+   * Trois temps, donc : figé (0-650), réveil (650-1300, scène déjà montée
+   * dessous), vivant (vignette démontée — il ne restait d'elle que son fond,
+   * identique à celui de la plaque). */
+  const [sortie, setSortie] = useState(false);
+  const [figeOn, setFigeOn] = useState(true);
+  useEffect(() => {
+    setVif(false);
+    setSortie(false);
+    setFigeOn(true);
+    const t1 = window.setTimeout(() => {
+      setVif(true);
+      setSortie(true);
+    }, 650);
+    const t2 = window.setTimeout(() => setFigeOn(false), 1120);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [sceneCap]);
+
+  /* La largeur RÉELLE de la plaque, pour mettre la vignette figée à son
+   * échelle : AtlasSlideVisual compose à 1000 x 880 en dur, et la plaque va
+   * de ~360 px (md) à 560 (xl). Un ResizeObserver, comme partout ailleurs. */
+  const plateRef = useRef<HTMLDivElement>(null);
+  const [plateW, setPlateW] = useState(560);
+  useEffect(() => {
+    const el = plateRef.current;
+    if (!el) return;
+    const mesure = () => setPlateW(el.clientWidth || 560);
+    mesure();
+    const ro = new ResizeObserver(mesure);
+    ro.observe(el);
+    return () => ro.disconnect();
+    /* ⚠ `sceneCap` DANS LES DÉPENDANCES, et ce n'est pas une erreur : la
+       plaque vit sous un AnimatePresence clé sur l'argument, elle est donc
+       DÉMONTÉE ET REMONTÉE à chaque bascule. Un observer posé une fois
+       resterait accroché au nœud détaché de la première plaque et ne
+       mesurerait plus jamais rien. */
+  }, [sceneCap]);
+
+  useEffect(() => {
+    if (sceneCap === activeCap) return;
+    const t = window.setTimeout(() => {
+      // Les deux dans le même tour : React les groupe, la scène entrante et la
+      // sortante lisent donc le même sens, celui du geste qui vient de finir.
+      setSens(activeCap > sceneCap ? 1 : -1);
+      setSceneCap(activeCap);
+    }, 140);
+    return () => window.clearTimeout(t);
+  }, [activeCap, sceneCap]);
+
+  /* ⚠ `querySelectorAll("li")` ET SURTOUT PAS `ul.children[activeCap]` :
+     l'encadré est LUI-MÊME le premier enfant de la liste, tout serait décalé
+     d'une entrée.
+     ⚠ LA GARDE D'ÉGALITÉ N'EST PAS DÉCORATIVE : l'observateur se déclenche à
+     chaque image pendant que l'accordéon s'ouvre, mais aussi sur des
+     changements de LARGEUR qui ne déplacent pas l'entrée. Sans elle, chacun de
+     ces appels rendait tout AtlasShowcase pour reposer les deux mêmes nombres. */
+  const mesurerCadre = useCallback(() => {
+    const ul = capListRef.current;
+    if (!ul) return;
+    const li = ul.querySelectorAll("li")[activeCap] as HTMLElement | undefined;
+    if (!li) return;
+    // 6 px de débord vertical : l'encadré respire autour de l'entrée.
+    const top = li.offsetTop - 6;
+    const height = li.offsetHeight + 12;
+    setCapFrame((prev) => (prev.top === top && prev.height === height ? prev : { top, height }));
+  }, [activeCap]);
+
+  useEffect(() => mesurerCadre(), [mesurerCadre]);
+
+  /* ⚠ L'OBSERVATEUR EST CRÉÉ UNE FOIS, PAS À CHAQUE ARGUMENT. Il dépendait de
+     `activeCap` : un coup de molette le démontait et le remontait sept fois, et
+     un ResizeObserver qui s'attache déclenche une mesure à chaque fois. */
+  const mesureRef = useRef(mesurerCadre);
+  useEffect(() => {
+    mesureRef.current = mesurerCadre;
+  }, [mesurerCadre]);
   useEffect(() => {
     const ul = capListRef.current;
     if (!ul) return;
-    const mesure = () => {
-      /* ⚠ `querySelectorAll("li")` ET SURTOUT PAS `ul.children[activeCap]` :
-         l'encadré est LUI-MÊME le premier enfant de la liste, `children[0]`
-         serait donc le cadre et tout serait décalé d'une entrée — c'était le
-         bug du premier jet, le cadre s'alignait sur l'argument précédent (et
-         se mesurait lui-même à l'index 0, d'où un cadre de 14 px). */
-      const li = ul.querySelectorAll("li")[activeCap] as HTMLElement | undefined;
-      // 6 px de débord vertical : l'encadré respire autour de l'entrée au
-      // lieu d'en épouser le filet supérieur.
-      if (li) setCapFrame({ top: li.offsetTop - 6, height: li.offsetHeight + 12 });
-    };
-    mesure();
-    const ro = new ResizeObserver(mesure);
+    const ro = new ResizeObserver(() => mesureRef.current());
     ro.observe(ul);
     return () => ro.disconnect();
-  }, [activeCap]);
+  }, []);
 
   useEffect(() => {
     const wrap = skyWrapRef.current;
@@ -711,35 +763,6 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
     };
   }, []);
 
-  const tabs: Tab[] = [
-    {
-      id: "galaxy",
-      icon: Globe,
-      iconBg: "bg-pink-500",
-      label: t({
-        fr: "Visualisez vos dossiers comme une galaxie",
-        en: "See your folders as a galaxy",
-      }),
-    },
-    {
-      id: "dashboard",
-      icon: LayoutDashboard,
-      iconBg: "bg-blue-500",
-      label: t({
-        fr: "Pilotez votre activité en un coup d'œil",
-        en: "Steer your work at a glance",
-      }),
-    },
-    {
-      id: "manager",
-      icon: Users,
-      iconBg: "bg-emerald-500",
-      label: t({
-        fr: "Coordonnez vos équipes en temps réel",
-        en: "Coordinate your teams in real time",
-      }),
-    },
-  ];
 
   return (
     <>
@@ -1097,7 +1120,13 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
                   des cinq, à défaut d'une scène dédiée à la confidentialité.
               Chaque scène masquée reçoit `active={false}` : minuteurs coupés,
               reprise à zéro au retour. */}
-          <div className="hidden border-l border-white/[0.10] md:grid md:items-center md:px-8 md:py-16 lg:px-12">
+          <div className="hidden border-l border-white/[0.10] md:grid md:items-center md:px-6 md:py-16 lg:px-8">
+            {/* ⚠ `relative` : c'est le repère de la glose, posée en ABSOLU sous
+                la scène. En flux elle comptait dans la boîte centrée et tirait
+                l'animation 48 px trop haut (centre de carte à 402 px pour une
+                colonne centrée à 450, mesuré). Hors flux, la boîte ne fait plus
+                que la hauteur de la scène, qui retrouve le centre exact. */}
+            <div className="relative">
             <div className="relative grid">
               {/* LE DÉCOR, UNIQUE ET PARTAGÉ (2026-08-23) : il vivait dans
                   AtlasLiveAsk et disparaissait donc avec elle à chaque bascule
@@ -1122,47 +1151,151 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
                   arguments 0, 1, 2 et 7. Le décor, lui, reste posé derrière :
                   c'est lui qui donne la continuité pendant que les scènes
                   changent. */}
-              <AnimatePresence>
-                {/* L'ENTRÉE CHANGE DE DIRECTION avec l'argument (bas, droite,
-                    gauche, en rotation) : deux scènes consécutives n'arrivent
-                    jamais du même côté — seconde moitié du correctif « deux
-                    animations de suite ne doivent pas commencer pareil ». */}
+              {/* `custom` EST PORTÉ DEUX FOIS : sur AnimatePresence il alimente
+                  la scène QUI SORT (déjà retirée de l'arbre, elle n'a plus que
+                  celui-ci), sur la motion.div celle qui ENTRE. */}
+              <AnimatePresence custom={{ sens, i: sceneCap }}>
+                {/* L'ENTRÉE CHANGE DE CÔTÉ avec l'argument : deux scènes
+                    consécutives n'arrivent jamais du même côté. Le VERTICAL,
+                    lui, suit le sens du défilement. */}
                 <motion.div
-                  key={activeCap}
-                  initial={{
-                    opacity: 0,
-                    scale: 0.97,
-                    x: [0, 44, -44][activeCap % 3],
-                    y: activeCap % 3 === 0 ? 26 : 8,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                    y: 0,
-                    scale: 1,
-                    transition: { type: "spring", stiffness: 380, damping: 32, mass: 0.9 },
-                  }}
-                  exit={{
-                    opacity: 0,
-                    y: -20,
-                    scale: 0.985,
-                    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
-                  }}
+                  key={sceneCap}
+                  custom={{ sens, i: sceneCap }}
+                  variants={SCENE_VARIANTS}
+                  initial="avant"
+                  animate="pose"
+                  exit="apres"
                   className="col-start-1 row-start-1 self-center"
                 >
-                  {activeCap === 3 ? (
-                    <AtlasLiveNotify />
-                  ) : activeCap === 4 ? (
-                    <AtlasLiveDocs />
-                  ) : activeCap === 5 ? (
-                    <AtlasLiveRelance />
-                  ) : activeCap === 6 ? (
-                    <AtlasLiveJour />
-                  ) : (
-                    <AtlasLiveAsk variante={activeCap} />
-                  )}
+                  {/* ══ LES SCÈNES ANIMÉES, DANS LE CADRE BLEU ══════════════
+                      Client 2026-08-29 : « les animations qui étaient avant sur
+                      un fond noir doivent se faire dans le cadre bleu, et
+                      agrandis-le légèrement en largeur ». Les vignettes fixes
+                      auront tenu une passe : c'est bien la plaque des vignettes
+                      qui reste (même rayon de 36 px, mêmes dégradés, choisis
+                      par argument via CAP_VISUELS pour garder la variété de la
+                      série), mais elle accueille les CINQ SCÈNES VIVANTES.
+
+                      ⚠ `.at-plate` N'EST PAS DÉCORATIF : c'est l'ancre du remap
+                      d'encres défini dans ATLAS_CSS. Les scènes ont été
+                      dessinées pour le noir — libellés d'étapes en blanc à
+                      70 %, pilules fantômes en blanc à 6 % — et seraient
+                      illisibles sur bleu clair sans lui. Le retirer casse la
+                      lisibilité SANS erreur nulle part.
+
+                      ⚠ LES OMBRES DES CARTES restent celles du fond noir
+                      (rgba(0,0,0,.7)) : sur la plaque claire elles se rendent
+                      un cran plus lourdes que sur les vignettes. Assumé — les
+                      adoucir demanderait de forker les cinq scènes, et c'est
+                      précisément ce que le remap évite.
+
+                      PLUS LARGE, PAR LES DEUX BOUTS : la plaque tient toute la
+                      colonne (max 560 px contre 470 à la vignette) ET la
+                      colonne elle-même s'élargit d'un cran (px-8 → px-6 à md,
+                      lg:px-12 → lg:px-8 sur le conteneur parent). Le rembourrage
+                      interne (p-6/p-8) laisse ~500 px utiles : la largeur
+                      naturelle des scènes, aucune mise à l'échelle. */}
+                  <div
+                    ref={plateRef}
+                    className="at-plate relative flex min-h-[440px] w-full max-w-[560px] items-center justify-center overflow-hidden rounded-[36px] p-6 md:p-8"
+                    style={{ background: PLATE_FONDS[CAP_VISUELS[sceneCap]] }}
+                  >
+                    {/* La scène vivante N'EST MONTÉE qu'à la fin du temps figé :
+                        montée cachée, ses minuteries tourneraient déjà et elle
+                        entrerait en cours de route au lieu de démarrer. */}
+                    {/* L'enveloppe at-scene-entre porte la moitié « mise au
+                        point » du morphing : la scène émerge du même flou que
+                        la vignette qui se dissout au-dessus d'elle. */}
+                    {vif && (
+                      <div className="at-scene-entre flex w-full items-center justify-center">
+                        {sceneCap === 3 ? (
+                          <AtlasLiveNotify />
+                        ) : sceneCap === 4 ? (
+                          <AtlasLiveDocs />
+                        ) : sceneCap === 5 ? (
+                          <AtlasLiveRelance />
+                        ) : sceneCap === 6 ? (
+                          <AtlasLiveJour />
+                        ) : (
+                          <AtlasLiveAsk variante={sceneCap} />
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── LA VIGNETTE FIGÉE, PAR-DESSUS ──────────────────────
+                        Le « design d'origine de l'encadré » que demande le
+                        client : la vignette de la grille, à l'échelle de la
+                        plaque, tenue 650 ms puis fondue en 300 ms pendant que
+                        la scène entre en ressort dessous.
+                        ⚠ ELLE COUVRE LA PLAQUE ENTIÈRE (inset-0, hors du
+                        rembourrage) : son propre fond est LE MÊME dégradé que
+                        la plaque (PLATE_FONDS est recopié d'AV_CSS), la
+                        jointure est donc invisible et le fondu ne fait bouger
+                        que les cartes blanches — pas le fond. */}
+                    {/* Plus de fondu plat : à `sortie`, la classe at-fige-sortie
+                        lance le décollage par élément défini dans ATLAS_CSS, et
+                        la vignette reste montée jusqu'à la fin de la cascade.
+                        Une fois ses blocs partis il ne reste d'elle que son
+                        dégradé, identique à celui de la plaque : le démontage
+                        est invisible. */}
+                    {figeOn && (
+                      <div
+                        className={`absolute inset-0 overflow-hidden rounded-[36px]${sortie ? " at-fige-sortie" : ""}`}
+                      >
+                        <div
+                          className="absolute left-0 top-0 h-[880px] w-[1000px] origin-top-left"
+                          style={{ transform: `scale(${plateW / 1000})` }}
+                        >
+                          <AtlasSlideVisual
+                            visual={CAP_VISUELS[sceneCap]}
+                            ask=""
+                            label={t(ATLAS_CAPS[sceneCap].label)}
+                            textless
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               </AnimatePresence>
+            </div>
+
+            {/* ── LA GLOSE, SOUS L'ANIMATION ───────────────────────────────
+                Client 2026-08-28 : une petite description en gris sous
+                l'animation, qui s'écrit au fur et à mesure et dit ce que le
+                client Y GAGNE (la liste de gauche dit ce qu'Atlas FAIT).
+
+                ⚠ `key={sceneCap}` : à chaque changement d'argument le composant
+                est REMONTÉ, la frappe repart donc de zéro en même temps que la
+                scène entre. `sceneCap` et non `activeCap` : la glose appartient
+                à l'animation, elle doit se poser avec elle — branchée sur
+                l'index immédiat elle repartait sept fois par coup de molette.
+
+                ⚠ `loop={false}` : elle s'écrit UNE FOIS et reste. Le mode par
+                défaut l'effacerait au bout de 2,2 s.
+
+                ⚠ `min-h-[4.5em]` : la boîte tient déjà la hauteur du texte
+                complet pendant la frappe, sinon la colonne remonterait d'une
+                ligne en cours de route. Mesuré : les 16 textes (8 fr + 8 en)
+                font tous exactement 63 px, l'animation ne bouge jamais.
+
+                ⚠ `top-full` l'ancre au BAS DE LA SCÈNE : les scènes vont de 283
+                à 366 px de haut, une glose à hauteur fixe se décollerait de la
+                plus courte.
+
+                FRAPPE À 11 ms ET 90 ms D'ATTENTE (défauts : 52 et 420). À
+                34 ms, 5,2 s pour 140 signes — plus longtemps qu'on ne reste sur
+                un argument, donc la moitié des visiteurs ne la voyaient jamais
+                en entier. Mesurée à 1,95 s. */}
+            <p className="absolute inset-x-0 top-full mt-8 min-h-[4.5em] max-w-[54ch] font-inter text-[13.5px] leading-[1.5] text-white/45 lg:text-[14px]">
+              <Typewriter
+                key={sceneCap}
+                phrases={[t(ATLAS_CAPS[sceneCap].apport)]}
+                typeMs={11}
+                startMs={90}
+                loop={false}
+              />
+            </p>
             </div>
           </div>
         </div>
@@ -1216,412 +1349,22 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
         </div>
       </section>
 
-    {/* ⚠ `motion.section` ET NON `section` : la feuille blanche remonte au
-        défilement (voir riseY, en tête de composant). Trois pièces la font
-        lire comme un rideau qui monte plutôt que comme une section de plus :
-          · `y` piloté au défilement, +88 px rendus pendant l'entrée ;
-          · `-mt-10` et le sommet ARRONDI, qui la posent PAR-DESSUS le noir au
-            lieu de bout à bout — c'est l'arrondi qui dit « une feuille passe
-            devant », un bord droit ne dirait rien ;
-          · `z-30`, supérieur au `z-20` de la vidéo au-dessus, sans quoi elle
-            passerait DESSOUS et le chevauchement serait invisible.
-        L'ombre est portée VERS LE HAUT (rayon négatif) : elle creuse la
-        jointure côté noir, ce qui est exactement ce qu'on voit quand une
-        feuille se soulève au-dessus d'une autre.
-        `overflow-hidden` était déjà là, il empêche l'arrondi de laisser
-        déborder la grille par les coins. */}
-    <motion.section
-      ref={riseRef}
-      data-nav-shy
-      className="relative z-[30] -mt-10 rounded-t-[36px] pt-20 md:pt-28 pb-24 md:pb-32 px-6 md:px-12 overflow-hidden shadow-[0_-24px_50px_-24px_rgba(0,0,0,0.55)] md:rounded-t-[44px]"
-      style={{
-        /* LE MOUVEMENT DU RIDEAU. `y` est une valeur de mouvement Framer, pas
-           un nombre : elle vit dans le même objet `style` que le reste, il ne
-           peut y avoir qu'une seule prop `style` sur un JSX.
-           ⚠ ET C'EST POURQUOI `transform: translateZ(0)` A DISPARU d'ici. Il
-           promouvait la section en couche de composition ; laissé en place, il
-           ÉCRASERAIT le `transform` que Framer écrit pour animer `y`, et le
-           rideau ne bougerait pas d'un pixel, sans erreur nulle part. La
-           promotion en couche n'est pas perdue pour autant : un `transform`
-           animé la produit de toute façon, c'est même le cas le plus favorable
-           pour le navigateur. */
-        y: riseY,
-        /* ── BLANC (client 2026-08-19 : « mets le en blanc pour le
-           background ») ──────────────────────────────────────────────────
-           La section était en NOIR PLEIN depuis le 2026-08-15 (« mets en noir
-           le fond de toute cette partie-là ») et formait, avec la scène
-           d'ouverture et la vidéo de démonstration, une seule surface noire
-           continue. Ce n'est plus vrai : la coupure tombe désormais sous la
-           vidéo, et c'est une vraie rupture de section, pas une couture ratée.
-           Trois conséquences, toutes traitées :
-             1. `data-nav-dark` A ÉTÉ RETIRÉ de cette section. C'est lui qui
-                disait à la barre de navigation de passer en logo clair et en
-                libellés blancs ; laissé sur un fond blanc, il rendait la barre
-                illisible sur toute la hauteur de la section.
-             2. Les encres du bloc sont retournées (titre #111827, accroche
-                #5b6577, catégories #6b7688 qui est le plancher de la charte).
-             3. Le bouton principal repasse du blanc plein au bleu de la charte.
-           Le pas du haut est monté de pt-10 à pt-20 : sur fond noir la section
-           se fondait dans la vidéo au-dessus, en blanc elle a besoin de sa
-           propre respiration après la rupture.
-           ⚠ #ffffff et non #fcfbf7 : la section suivante (PlatformShowcase)
-           ouvre sur `#fcfbf7`, l'alternance de CLAUDE.md veut donc le blanc pur
-           ici. */
-        background: "#ffffff",
-        // ── FLUIDITÉ DE LA REMONTÉE (client 2026-08-05 : « la remontée de la
-        // partie Atlas est un peu buggée, fluidifie-la ») ──────────────────
-        // La section passe PAR-DESSUS la pile de cartes épinglées, c'est donc
-        // au navigateur de la redessiner à chaque image du défilement, et
-        // c'était cher. `contain: paint` lui promet que rien ne déborde de la
-        // boîte — vrai, `overflow-hidden` est là — donc il peut élaguer tout le
-        // dessin hors cadre au lieu de l'évaluer.
-        // Le `translateZ(0)` qui l'accompagnait est parti le 2026-08-20 : voir
-        // la note sur `y` ci-dessus, il aurait annulé l'animation du rideau.
-        contain: "paint",
-      }}
-    >
-      {/* L'ombre du bord haut a été RETIRÉE avec le fond dégradé : c'était un
-          voile marine (#020617 à 42 %) qui creusait la jointure avec la scène
-          d'ouverture. Sur deux blocs désormais noirs à l'identique, elle ne
-          faisait plus qu'une bande grise en travers de la page. */}
-      {/* Scroll-triggered stagger entrance: each major block fades up
-          when the section enters the viewport. `once: true` means the
-          animation plays a single time (no replay when scrolling back).
-          `margin: "-80px"` triggers slightly before the section is fully
-          in view so the entrance feels anticipatory, not delayed. */}
-      <motion.div
-        className="max-w-7xl mx-auto"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-80px" }}
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
-        }}
-      >
-        {/* ══ ATLAS EST L'ASSISTANT (client 2026-08-14) ══════════════════════
-            « Mon but est de faire passer notre super assistant comme le
-            dénommé Atlas, donc merge cette partie dedans. » L'assistant vivait
-            dans un encadré générique de la section plateforme, sans nom ; il
-            est ici, et l'encadré d'origine a été retiré. Tant qu'un
-            « Assistant » anonyme subsistait ailleurs, le nom ne pouvait pas
-            prendre.
-
-            LE TITRE EST LA PHRASE DÉJÀ VALIDÉE de l'encadré assistant
-            (« Posez votre question, l'assistant cherche dans vos dossiers »),
-            coupée en deux encres, « l'assistant » devenant « Atlas ». Rien
-            n'est réécrit : c'est la même promesse, elle porte juste un nom.
-            La pastille « Atlas » qui coiffait ce bloc est partie avec
-            l'ouverture : le mot fait désormais dix centimètres de haut trois
-            écrans plus haut, le répéter en petit n'apprendrait rien.
-
-            ⚠ LE BLOC EST DEVENU UN CARROUSEL le 2026-08-15 (client : « une
-            organisation où on a une phrase d'écrite, on a un encadré, on peut
-            switcher d'encadré de droite à gauche, avec plein d'utilisations
-            possibles d'Atlas »). Le titre ne bouge pas, il pose la promesse ;
-            ce qui change sous lui, c'est la DEMANDE, et le panneau la joue.
-            Le paragraphe explicatif qui vivait ici est parti : six exemples
-            concrets disent la même chose que lui, en le montrant.
-
-            ⚠ LES COMMANDES ONT ÉTÉ REFAITES le même jour, seconde passe
-            (client : « ce n'est pas clair que l'on peut passer d'un encadré à
-            un autre »). Le premier jet mettait deux flèches et six points sous
-            la phrase, DANS LA COLONNE DE GAUCHE : rien ne les rattachait
-            visuellement au panneau de droite, et six points gris ne disent pas
-            ce qu'il y a dans les six vues. Trois changements, tous dans le sens
-            de rendre le choix explicite :
-              1. UNE BARRE D'ONGLETS NOMMÉS coiffe le bloc, un onglet par usage,
-                 avec son icône. On lit d'un coup ce qu'Atlas sait faire et on
-                 clique là où on veut aller. C'est aussi ce qui remplace la
-                 pastille de catégorie, qui répétait l'onglet actif.
-              2. LES FLÈCHES PASSENT SUR LE PANNEAU, à cheval sur ses flancs.
-                 Une flèche posée SUR l'objet dit qu'elle déplace cet objet-là.
-              3. UN COMPTEUR « n / 6 » sous le panneau, qui dit combien il en
-                 reste. */}
-        {/* ══ LES USAGES, EN GRILLE COMPACTE ═════════════════════════════════
-            Client 2026-08-19, salle de presse OpenAI à l'appui, en trois
-            passes successives — l'historique compte, il explique la forme :
-              1. « une organisation un peu comme OpenAI, niveau du layout » →
-                 grille deux colonnes, vignette à gauche, titre à droite. Les
-                 vignettes étaient des dégradés grainés, abstraits.
-              2. « remets les designs que l'on avait généré avant, et mets le en
-                 blanc pour le background » → les six scènes AtlasSlideVisual
-                 reviennent, mais posées AU-DESSUS du texte et en pleine
-                 largeur de colonne (620 px) pour rester lisibles.
-              3. « une répartition en petites icônes, exactement comme le
-                 screen, pas en énormes icônes » → la vignette redescend à
-                 GAUCHE du titre, en carré compact. C'est l'état actuel.
-
-              4. « fais en sorte que les encadrés soient plus grands » → la
-                 vignette passe de 168 à 224 px sur grand écran (128 / 168 /
-                 196 / 224 selon le palier), la gouttière se resserre de 64 à
-                 56 px pour rendre au titre la place prise, et le rayon suit
-                 (14 → 18 px) : un carré plus grand avec le même arrondi paraît
-                 plus carré, pas plus grand.
-
-            ⚠ CE QUE LA PETITE VIGNETTE COÛTE, ET POURQUOI C'EST QUAND MÊME LE
-            BON CHOIX. Une scène est une planche de 1000 x 880 dessinée pour
-            être lue en grand : à 224 px le facteur tombe à 0,25 et la phrase de
-            sa carte blanche, posée à 19,5 px, se rend à 5 px. Elle n'est plus
-            lisible, et ce n'est PAS un défaut à corriger — à cette taille la
-            scène joue le rôle exact des vignettes de la référence, qui sont
-            elles aussi des images muettes : elle donne à chaque ligne une
-            couleur et une silhouette reconnaissables, et c'est le TITRE à côté
-            qui porte le sens. Le visiteur qui veut voir une scène en grand la
-            voit dans la vidéo de démonstration, juste au-dessus.
-            Conséquence pratique : `aria-hidden` sur la vignette. À 3,7 px son
-            texte n'est plus une information pour personne, et l'étiquette que
-            AtlasSlideVisual expose (`role="img"` + description de la scène)
-            ferait lire à un lecteur d'écran une description de blocs vides
-            avant le titre qui, lui, dit vraiment quelque chose.
-
-            LE CADRAGE EST EN « COVER », PAS EN « FIT ». Réduire 1000 x 880
-            pour qu'il TIENNE dans un carré laisserait deux bandes vides en
-            haut et en bas ; on agrandit donc jusqu'à ce que le petit côté
-            remplisse (facteur = côté / 880) et on rogne les 13,6 % qui
-            dépassent en largeur, centrés. D'où `--k` calculé en CSS à partir
-            de `--tile` : les deux restent liés quelle que soit la taille de
-            palier, là où deux constantes séparées finiraient par diverger.
-
-            LE TITRE DE CHAQUE ENTRÉE EST `line`, PAS `head`. `head` est une
-            question en deux encres qui fait deux phrases empilées dans une
-            case de grille ; `line` est déjà le bénéfice en une ligne, c'est le
-            rôle du titre chez OpenAI. `tag` devient la catégorie en dessous, à
-            la place de la date de la référence : nous n'avons pas de date à
-            mettre là, et en inventer une serait un faux. */}
-        <motion.div variants={fadeInUp}>
-          <div className="max-w-[42ch]">
-            <h3 className="font-instrument text-[clamp(2rem,3.7vw,3.2rem)] font-normal leading-[1.07] tracking-[-0.03em] text-[#111827]">
-              {t({ fr: "Ce qu'Atlas sait faire.", en: "What Atlas can do." })}
-            </h3>
-            <p className="mt-5 font-inter text-[17px] leading-[1.55] text-[#5b6577] md:text-[18px]">
-              {t({
-                fr: "Six demandes du quotidien, posées en français, traitées sur vos propres fichiers.",
-                en: "Six everyday requests, asked in plain words, answered on your own files.",
-              })}
-            </p>
-          </div>
-
-          {/* `gap-x-16` est la gouttière large de la référence : c'est elle qui
-              empêche de lire la grille en rangées horizontales au lieu de six
-              entrées distinctes. */}
-          <div className="mt-12 grid gap-x-10 gap-y-10 md:mt-16 md:grid-cols-2 md:gap-x-14 md:gap-y-14">
-            {USE_CASES.map((u) => (
-              /* ── L'ENTRÉE RÉAGIT AU SURVOL (client 2026-08-19 : « ajoute une
-                 animation quand on passe sur les différents encadrés ») ──────
-                 `group` sur l'article : c'est le survol de TOUTE l'entrée, pas
-                 de la seule vignette, qui déclenche — la cible est alors deux
-                 fois plus large et le geste n'a pas à viser.
-                 Trois choses bougent ensemble, toutes discrètes :
-                   · la vignette se soulève de 4 px et grandit de 3 %,
-                   · son ombre s'approfondit et descend, ce qui est ce qui fait
-                     vraiment lire le soulèvement (une translation seule glisse,
-                     elle ne décolle pas),
-                   · le titre avance de 2 px, pour que le texte participe au
-                     lieu de rester planté à côté d'une image qui bouge.
-                 ⚠ PAS DE CHANGEMENT DE COULEUR NI DE SOULIGNEMENT sur le titre :
-                 l'entrée n'est PAS cliquable aujourd'hui. Un bleu au survol
-                 promettrait une destination qui n'existe pas encore. Le jour où
-                 la page listant les automatisations existe, l'article devient
-                 un lien et c'est là qu'un signal de cliquabilité aura un sens.
-                 `motion-safe:` sur les seules transformations : un visiteur qui
-                 a demandé moins d'animations garde l'ombre, qui l'informe, et
-                 perd le mouvement, qui le gêne. */
-              <article
-                key={u.tag.en}
-                className="group flex items-center gap-5 md:gap-7"
-              >
-                {/* LA VIGNETTE.
-                    `--tile` porte le côté du carré, `--k` s'en déduit. Le
-                    `translate(-50%,-50%)` recentre la planche sur la vignette
-                    AVANT la mise à l'échelle (l'origine du transform reste au
-                    centre), ce qui rogne symétriquement à gauche et à droite.
-                    L'ombre remplace le contraste que le fond noir donnait
-                    gratuitement : sur blanc, une plaque claire sans ombre
-                    flotte sans se poser. */}
-                {/* ⚠ `--tile` EST SANS UNITÉ, et ce n'est pas un détail de
-                    style. Écrit `104px`, le facteur `calc(var(--tile) / 880)`
-                    vaut `0.118px` — une LONGUEUR. `scale()` n'accepte qu'un
-                    nombre : le transform entier est alors invalide, la planche
-                    reste à sa taille réelle et la vignette ne montre plus que
-                    le coin haut-gauche du dégradé, en blanc cassé. Aucune
-                    erreur en console, juste six carrés presque vides. Les
-                    pixels sont donc remis au dernier moment, sur la largeur. */}
-                <div
-                  aria-hidden
-                  className="relative aspect-square w-[calc(var(--tile)*1px)] shrink-0 overflow-hidden rounded-[14px] shadow-[0_10px_24px_-16px_rgba(10,37,64,0.38)] transition-[transform,box-shadow] duration-300 ease-out group-hover:shadow-[0_20px_40px_-18px_rgba(10,37,64,0.42)] motion-safe:group-hover:-translate-y-1 motion-safe:group-hover:scale-[1.03] [--tile:104] sm:[--tile:132] md:[--tile:152] lg:[--tile:168]"
-                  style={{ ["--k" as string]: "calc(var(--tile) / 880)" }}
-                >
-                  <div
-                    className="absolute left-1/2 top-1/2 h-[880px] w-[1000px]"
-                    style={{ transform: "translate(-50%, -50%) scale(var(--k))" }}
-                  >
-                    {/* `textless` (client 2026-08-19 : « pas de texte dedans,
-                        juste le design »). À 0,25, la phrase de la carte
-                        blanche se rendait à 5 px et les petites capitales à
-                        2,5 px : du bruit gris sur une composition propre.
-                        Chaque libellé devient une barre, sans que rien ne
-                        bouge — voir la note de AtlasSlideVisual.
-                        `ask` continue d'être passé : il porte encore la boîte
-                        (donc la hauteur de la carte, qui varie d'une scène à
-                        l'autre selon le nombre de lignes), il n'est plus que
-                        transparent. */}
-                    <AtlasSlideVisual
-                      visual={u.visual}
-                      ask={t(u.ask)}
-                      label={t(u.alt)}
-                      textless
-                    />
-                  </div>
-                </div>
-
-                {/* `min-w-0` : sans lui, la colonne de texte d'une grille refuse
-                    de descendre sous la largeur de son plus long mot et pousse
-                    la vignette hors de la case sur les petits écrans. */}
-                <div className="min-w-0 transition-transform duration-300 ease-out motion-safe:group-hover:translate-x-0.5">
-                  {/* ⚠ INSTRUMENT SANS, EN 400, ET C'EST UN CHANGEMENT DE FACE
-                      (client 2026-08-20 : « les encadrés un peu plus petits, et
-                      les phrases probablement dans une police différente…
-                      quelque chose de plus minimaliste »). Le titre était en
-                      Inter 500. Trois choses le rendaient plus lourd que la
-                      référence : la graisse, la face de labeur, et la taille
-                      des vignettes.
-                      La charte range les titres de carte du bento en Inter,
-                      mais elle range aussi TOUS les grands titres d'affichage
-                      en Instrument Sans — et c'est bien de titres qu'il s'agit
-                      ici, pas d'étiquettes d'interface. Instrument Sans en 400
-                      est exactement la respiration de la référence, là où Inter
-                      500 tenait de l'étiquette.
-                      ⚠ NE PAS DESCENDRE SOUS 400 : Instrument Sans n'a pas de
-                      graisse plus légère, `font-light` y est du code mort (voir
-                      CLAUDE.md). Pour l'alléger encore, le seul levier serait
-                      l'anticrénelage WebKit. */}
-                  <h4 className="font-instrument text-[18px] font-normal leading-[1.25] tracking-[-0.02em] text-[#111827] md:text-[21px]">
-                    {t(u.line)}
-                  </h4>
-                  {/* `#6b7688` est le PLANCHER de la charte sur fond clair :
-                      rien ne descend plus bas. Passé en 12,5 px : la catégorie
-                      doit rester la ligne secondaire, or le titre vient de
-                      s'alléger, l'écart entre les deux se creuse par la taille
-                      plutôt que par la couleur. */}
-                  <p className="mt-2.5 font-inter text-[12.5px] leading-tight text-[#6b7688] md:mt-3">
-                    {t(u.tag)}
-                  </p>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          {/* Le bouton ferme la grille : on lit les six usages, puis on prend
-              rendez-vous. Il était BLANC PLEIN tant que la section était noire,
-              faute d'autre contraste possible ; sur blanc il repasse au bleu de
-              la charte, comme tous les CTA principaux du site. */}
-          <button
-            type="button"
-            onClick={openBooking}
-            className="group mt-12 inline-flex items-center gap-2.5 rounded-[8px] bg-[#3b82f6] px-5 py-3 font-inter text-[14.5px] font-semibold text-white transition-colors duration-150 hover:bg-[#2563eb] md:mt-16"
-          >
-            {t({ fr: "Réserver un appel", en: "Book a call" })}
-            <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-          </button>
-        </motion.div>
-
-        {/* ── LA RÉPLIQUE DU LOGICIEL A ÉTÉ RETIRÉE ─────────────────────────
-            Client 2026-08-15, capture de l'encadré à l'appui : « retire
-            l'encadré du screen que je t'envoie ». C'était la réplique fidèle
-            d'Atlas (AtlasSimulation dans son cadre bleu et son halo), page
-            « Votre Atlas » avec ses projets épinglés. Elle avait déjà voyagé la
-            veille, du haut de la section vers son pied.
-            Ce qu'elle disait est désormais dit deux fois plus haut, et mieux :
-            le carrousel montre Atlas EN TRAIN DE RÉPONDRE, sur six demandes
-            différentes ; la réplique, elle, ne montrait qu'un écran d'accueil
-            immobile. Le bloc « Création de système d'orchestration » ferme donc
-            la section.
-            AtlasSimulation, ScaleToFit et le brief restent en place : remonter
-            la réplique, c'est réécrire ces trente lignes, pas la reconstruire
-            (voir l'historique git de ce fichier). */}
-
-        {/* Lower tabbed demo (TabPills + 3 video/mockup carousel) — hidden for
-            now at the client's request. Flip `false` to `true` to restore. */}
-        {false && (
-        <motion.div className="mt-14 md:mt-16" variants={fadeInUp}>
-          <TabPills tabs={tabs} active={bottomTab} onSelect={setBottomTab} />
-
-          <div className="relative max-w-5xl mx-auto">
-            {/* No surrounding frame — the cards float directly (Bubble-style),
-                lifted only by a soft ambient glow behind the active card. */}
-            <div
-              aria-hidden
-              className="absolute -inset-8 -z-10 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(48% 58% at 50% 50%, rgba(96,165,250,0.22) 0%, rgba(56,189,248,0.10) 46%, transparent 76%)",
-              }}
-            />
-            {/* Stage — Bubble-style carousel with NO frame: the active card is
-                centred, neighbours peek on the sides, clipped only by the
-                section's own overflow. */}
-            <div className="relative w-full" style={{ aspectRatio: "16 / 10" }}>
-                {tabs.map((tab, i) => {
-                  const activeI = tabs.findIndex((t) => t.id === bottomTab);
-                  const offset = i - activeI;
-                  const isActive = offset === 0;
-                  // Coverflow WITHOUT wrap-around: only the IMMEDIATE neighbours
-                  // peek. So the first tab shows just a right peek, the last just
-                  // a left peek, and the middle ("Pilotez") shows both.
-                  const isPeek = offset === 1 || offset === -1;
-                  // Horizontal track: each card sits one ~104% "step" left/right
-                  // of centre, so cards slide in from the correct side.
-                  const x = `${-50 + offset * 104}%`;
-                  return (
-                    <motion.div
-                      key={tab.id}
-                      className="absolute top-1/2 left-1/2 w-[74%] rounded-2xl overflow-hidden ring-1 ring-black/[0.06] bg-white shadow-[0_24px_56px_-22px_rgba(8,12,28,0.55)]"
-                      style={{
-                        aspectRatio: "16 / 10",
-                        zIndex: isActive ? 3 : 2,
-                      }}
-                      initial={false}
-                      animate={{
-                        opacity: isActive ? 1 : isPeek ? 0.5 : 0,
-                        scale: isActive ? 1 : 0.72,
-                        x,
-                        y: "-50%",
-                        filter: isActive ? "blur(0px)" : "blur(3px)",
-                      }}
-                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      {tab.id === "galaxy" ? (
-                        <InViewVideo
-                          src="/ora_atlas.mp4"
-                          className="absolute inset-0 w-full h-full object-cover block"
-                        />
-                      ) : (
-                        // Mockups are taller than the 16/10 card: anchor to the
-                        // top so the meaningful header + cards show (cropped at
-                        // the bottom, like a windowed screenshot).
-                        /* `aria-hidden` + `inert` : ces maquettes sont du
-                           DÉCOR, et elles contiennent huit boutons qui ne font
-                           rien (cloche, messages, filtres de la fausse
-                           application). Sans cela, un visiteur au clavier
-                           traverse huit arrêts dans une capture d'écran, et un
-                           lecteur d'écran énumère une interface qui n'existe
-                           pas. */
-                        <div aria-hidden inert className="absolute inset-x-0 top-0">
-                          <ScaleToFit>
-                            {tab.id === "dashboard" ? <MockupHome /> : <MockupManager />}
-                          </ScaleToFit>
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-          </div>
-        </motion.div>
-        )}
-      </motion.div>
-    </motion.section>
+    {/* ══ « CE QU'ATLAS SAIT FAIRE » A ÉTÉ RETIRÉE (2026-08-30) ═══════════
+        Client : « supprime cette partie du site maintenant du coup ». Le
+        « du coup » dit la raison : depuis que les six vignettes illustrent
+        l'écran épinglé argument par argument (l'image figée qui s'éveille),
+        cette section blanche les remontrait TOUTES trois écrans plus bas —
+        la page aurait dit deux fois la même chose, dans le même ordre.
+        Sont partis avec elle : la grille des six usages, son bouton, le
+        rideau blanc arrondi qui montait au défilement (riseY), et le
+        carrousel à onglets du bas qui dormait derrière un false && depuis le
+        2026-08-05. Le passage vers la section suivante se fait en coupe
+        franche noir → blanc, comme partout ailleurs sur le site.
+        USE_CASES est parti aussi : l'écran épinglé choisit ses vignettes par
+        CAP_VISUELS et ses textes par ATLAS_CAPS, il n'en dépendait pas. Ses
+        six fiches (tag, titre en deux encres, ligne, ask balisé) étaient de la
+        copie VALIDÉE : historique git de ce fichier à cette date pour les
+        récupérer. */}
 
     {/* ══ « CRÉATION DE SYSTÈME D'ORCHESTRATION » A ÉTÉ RETIRÉE ═══════════
         Client 2026-08-15 : « enlève cette partie-là », titre, phrase et carte
@@ -1643,67 +1386,9 @@ export default function AtlasShowcase({ openBooking }: { openBooking: () => void
   );
 }
 
-/** Horizontal row of feature tab pills (icon badge + label). Shared by the
-    interactive mockup (top) and the demo-video area (below the paragraph). */
-function TabPills({
-  tabs,
-  active,
-  onSelect,
-}: {
-  tabs: Tab[];
-  active: TabId;
-  onSelect: (id: TabId) => void;
-}) {
-  return (
-    <div className="flex justify-center mb-10 md:mb-14">
-      {/* One unified rounded selector (Bubble-style): the active tab is an
-          outlined pill, the others are plain text inside the same track. */}
-      <div className="inline-flex flex-wrap justify-center items-center gap-1.5 p-1.5 rounded-full border border-white/[0.12] bg-white/[0.03]">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = tab.id === active;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onSelect(tab.id)}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-full transition-all duration-200 ${
-                isActive
-                  ? "border border-white/70 bg-white/[0.07]"
-                  : "border border-transparent hover:bg-white/[0.05]"
-              }`}
-            >
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${tab.iconBg}`}
-              >
-                <Icon className="w-[15px] h-[15px] text-white" strokeWidth={2.25} />
-              </div>
-              <span
-                className={`font-poppins font-semibold text-[13px] md:text-[14px] leading-snug whitespace-nowrap transition-colors duration-200 ${
-                  isActive ? "text-white" : "text-white/55 hover:text-white/80"
-                }`}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 /* `slideVariants` et `cardVariants` vivaient ici : les deux glissades du
    carrousel des usages, l'une pour la phrase, l'autre pour le panneau. Elles
    sont parties avec lui le 2026-08-19, la grille n'ayant rien à faire glisser
    d'un côté à l'autre. */
 
-/** Fade-up entrance — used by every staggered child in the section. */
-const fadeInUp = {
-  hidden: { opacity: 0, y: 28 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};

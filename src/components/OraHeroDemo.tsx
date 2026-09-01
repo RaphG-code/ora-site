@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform, type MotionValue } from "framer-motion
 import { ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import OraAppScene, { OA_ASPECT } from "./OraAppScene";
+import InViewVideo from "./InViewVideo";
 import OraHeroMobile from "./OraHeroMobile";
 import AppTablePanel from "./AppTablePanel";
 import OraHomeMockup from "./OraHomeMockup";
@@ -32,6 +33,62 @@ import OraHomeMockup from "./OraHomeMockup";
  * `.hd-`. prefers-reduced-motion → final state. Swap back to <OraGallery>
  * for the 6-video carousel when the real clips arrive.
  */
+
+/** ── LE DÉZOOM AU DÉFILEMENT, ÉTEINT LE 2026-08-28 ────────────────────────
+ *  Un seul interrupteur pour toute la scène épinglée. Voir le pavé à l'endroit
+ *  où il est lu, plus bas dans le rendu : il dit ce qui part avec, et pourquoi
+ *  le bloc est masqué plutôt que jeté. */
+const DEZOOM_AU_SCROLL = false;
+
+/** ── LA VIDÉO DU HERO ─────────────────────────────────────────────────────
+ *  ora-1.mp4, le film du produit, déjà joignable depuis la section
+ *  « automatisation » par le lien « Voir la démo en vidéo ».
+ *
+ *  ⚠ 22,3 Mo, ET C'EST LE POINT FAIBLE DE CE BLOC. Dans la fenêtre
+ *  d'agrandissement d'AutomationTabs le clip n'est monté qu'au clic, donc rien
+ *  ne part tant que personne ne le demande. Ici il est au PREMIER ÉCRAN : il
+ *  se télécharge pour tout visiteur de l'accueil, y compris ceux qui ne le
+ *  regarderont pas. Le poster et `preload="metadata"` sauvent l'AFFICHAGE, pas
+ *  le transfert — dès que l'IntersectionObserver lance la lecture, le fichier
+ *  part en entier.
+ *  Si le temps de chargement de l'accueil devient un sujet, c'est la première
+ *  ligne à rouvrir : ré-encoder ora-1 à quelques mégaoctets, ou monter un clip
+ *  court pour cette place. */
+const HERO_VIDEO = "/ora-1.mp4";
+
+/** ── LA RÉPLIQUE DANS LE HERO ─────────────────────────────────────────────
+ *  ⚠ L'ARITHMÉTIQUE QUI COMMANDE TOUT LE BLOC, et qu'il faut avoir en tête
+ *  avant d'y toucher. Client 2026-08-29 : titre sur DEUX lignes et bien plus
+ *  gros, réplique PLUS GRANDE, mise en page façon Stripe. Les trois ne tiennent
+ *  pas ensemble dans deux demi-colonnes, et voici pourquoi :
+ *    · « plus d'analyse, plus de conseil. » fait 31 signes. Sur UNE ligne à la
+ *      taille S, il lui faut ~31 x 0,47 x S pixels. À 54 px, 787 px de colonne
+ *      de texte — soit 59 % du conteneur de 1344. Descendre sous cette largeur
+ *      renvoie le titre à trois lignes, ce qui était le défaut à corriger.
+ *    · il reste donc ~48 % au visuel une fois le débord d'écran compté, alors
+ *      que l'empreinte complète de la scène (fenêtre + pastilles) fait 1626 px.
+ *  Tout montrer ET grossir est impossible : c'est l'un ou l'autre.
+ *
+ *  LA RÉPONSE N'EST PAS DE TRANCHER, C'EST DE RENDRE DE LA PLACE. Sortir le
+ *  titre de la paire (voir le pavé de la bande) fait passer la colonne du
+ *  visuel de 450 à ~1000 px. La scène peut alors rester ENTIÈRE, pastilles
+ *  comprises, et grossir quand même : la fenêtre passe de 535 à ~700 px de
+ *  large à 1440, soit +30 %.
+ *
+ *  ⚠ UN CADRAGE À ÉCHELLE FIXE A ÉTÉ ESSAYÉ ET RETIRÉ. À 0,64 la fenêtre
+ *  atteignait 755 px, mais les trois pastilles de sortie se faisaient trancher
+ *  par le bord de l'écran en lamelles de quelques pixels — pas un cadrage, des
+ *  débris. Et une échelle fixe ne peut pas convenir à toutes les largeurs : ce
+ *  qui tient à 1440 déborde à 1280 et flotte à 1728. Le mode AJUSTÉ recalcule
+ *  l'échelle par colonne, il s'adapte donc tout seul (0,52 à 1280, 0,59 à
+ *  1440, 0,69 à 1728) et ne coupe jamais rien.
+ *
+ *  ⚠ LES 70 % / 13 % NE SONT PAS UN CENTRAGE. Les pastilles débordent de la
+ *  fenêtre de 188 px à gauche et 258 px à droite (mesuré en page, pas déduit
+ *  du CSS : la lecture des ancrages donnait 181 et 229, et les 29 px d'écart
+ *  suffisaient à faire dépasser la page). Il faut donc 11,2 % de la cellule à
+ *  gauche et 15,3 % à droite ; on en réserve 13 et 17, pour que le flottement
+ *  perpétuel des pastilles ne vienne pas clignoter en bord de page. */
 
 interface OraHeroDemoProps {
   theme: "light" | "dark";
@@ -298,6 +355,22 @@ const HD_CSS = `
   will-change:transform;
   font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   color:#111827;-webkit-font-smoothing:antialiased}
+/* ── LE ROND DE FOND DU HERO ────────────────────────────────────────────
+   ⚠ IL AVAIT DISPARU AVEC LE DEZOOM. La classe hd-blob ne vit que dans la
+   scene epinglee, eteinte le 2026-08-28 : le rond bleute qui derivait derriere
+   la replique est parti avec elle, sans que rien ne le signale. Client
+   2026-08-29 : « garde le design de fond de la replication ».
+   (PAS D'ACCENT GRAVE DANS CE BLOC : template literal. Un seul referme la
+   chaine et le fichier ne compile plus.)
+   Meme degrade et meme derive que hd-blob, mais pose en POURCENTAGES : il
+   doit suivre une rangée qui change de largeur avec l'écran, là où l'original
+   était calé au pixel dans une scène de 1040 de large. */
+.hd-heroglow{position:absolute;z-index:0;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 38% 30%,#ffffff,#eef2fb 70%,#e0e7f6);
+  animation:hdBlobFloat 16s ease-in-out infinite alternate}
+.dark .hd-heroglow{background:radial-gradient(circle at 38% 30%,rgba(255,255,255,.10),rgba(255,255,255,.035) 60%,transparent 75%)}
+@media (prefers-reduced-motion:reduce){.hd-heroglow{animation:none}}
+
 .hd-blob{position:absolute;z-index:0;left:420px;top:70px;width:590px;height:590px;border-radius:50%;
   background:radial-gradient(circle at 38% 30%,#ffffff,#eef2fb 70%,#e0e7f6);
   animation:hdBlobFloat 16s ease-in-out infinite alternate}
@@ -1922,7 +1995,7 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
           largeur. D'où une branche tactile distincte, comme le fait déjà
           OraExperienceCarousel. */}
       <div className="md:hidden">
-        <OraHeroMobile />
+        <OraHeroMobile openBooking={openBooking} />
       </div>
 
       {/* ── LE TITRE, EN FLUX NORMAL (client 2026-08-13) ─────────────────────
@@ -1943,18 +2016,69 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
             et la phrase Testez Ora sur vos fichiers »). Les 40 px de marge
             basse s'ajoutaient aux 112 px de retrait du bloc épinglé : 185 px
             de vide mesurés entre la ligne et le haut de la fenêtre. */}
-        <div className="px-6 md:px-12 pt-24 md:pt-28 pb-0">
+        {/* ⚠ LA MARGE DOUBLE À `lg` (48 → 80 px), et ce n'est pas du confort.
+            Mesuré sur la capture Softriver ramenée à l'échelle : leur discours
+            commence à ~96 px du bord sur un écran équivalent, contre 48 ici —
+            le texte collait au bord deux fois plus près que la référence, ce
+            qui est précisément ce qui se lit comme « proportions incohérentes
+            par rapport à l'écran ».
+            80 px n'est pas non plus un chiffre rond choisi au hasard : c'est la
+            valeur qui aligne le bord gauche du texte sur celui de la PASTILLE
+            du fichier déposé, en dessous (84 px mesurés). Les deux blocs du
+            hero partagent donc une arête, au lieu de commencer chacun où sa
+            propre mécanique le laissait tomber. */}
+        {/* ⚠ `pb-0` EST DEVENU `lg:pb-16`. Le zéro venait de la scène
+            épinglée : elle remontait de 40 px sous le titre, tout blanc entre
+            les deux se voyait double. La scène est éteinte depuis le
+            2026-08-28, plus rien ne remonte, et le hero se terminait donc au
+            ras de la section suivante. Client 2026-08-29 : « ajoute de
+            l'espace libre pour rendre le site plus minimaliste ». */}
+        <div className="px-6 md:px-12 pt-24 md:pt-28 pb-0 lg:px-20 lg:pb-16">
           {/* DEUX COUCHES : l'enveloppe extérieure n'appartient PLUS au moteur
               de scroll (2026-08-13) — elle ne sert plus qu'à mesurer —, la
               couche intérieure porte l'animation d'arrivée Framer. */}
           <div
             ref={headlineRef}
-            className="hd-headline relative z-10 text-center max-w-[90rem] mx-auto"
+            className="hd-headline relative z-10 max-w-[90rem] mx-auto"
           >
+          {/* ══ CÔTE À CÔTE : LE DISCOURS À GAUCHE, LE PRODUIT À DROITE ═════
+              Client 2026-08-28, captures Stripe et Softriver à l'appui : « une
+              phrase à gauche et un design à droite… je veux arrêter avec la
+              phrase, puis le bouton, puis la réplication du logiciel ».
+
+              CE QUI CHANGE EST L'ARRANGEMENT, PAS LE CONTENU. Rien n'est
+              réécrit : la ligne de marque, le titre à deux encres, la phrase,
+              l'appel et la rangée de preuve sont les textes validés, déplacés.
+              C'est le cœur de la demande — ce qui fatiguait n'était aucun de
+              ces éléments, c'était de les recevoir l'un SOUS l'autre, centrés,
+              avant de tomber sur la réplique du logiciel.
+
+              CE QUI EST REPRIS DES DEUX RÉFÉRENCES, et rien d'autre :
+                · le discours ALIGNÉ À GAUCHE et non centré, les deux le font ;
+                · le titre à deux encres, déjà la grammaire du site, et déjà
+                  celle de Stripe (début en encre pleine, suite en gris) ;
+                · la rangée de preuve en BANDE sous les colonnes, comme la
+                  bande de logos de Stripe. Elle était sous le bouton ; dans
+                  une demi-colonne ses quatre mentions tombaient sur trois
+                  lignes. Pleine largeur, elle tient sur une et ferme le hero.
+              Ce qui n'est PAS repris : le second bouton que les deux
+              références posent à côté du premier. Le site a UN appel, la
+              réservation, et la concurrence de deux CTA est un défaut relevé
+              à l'audit du 2026-08-15 puis corrigé le 2026-08-26. Ce n'est pas
+              un oubli.
+
+              ⚠ DEUX COLONNES À `lg` SEULEMENT, ET C'EST MESURÉ. HeroSideScene
+              compose à 520 px de large puis se met à l'échelle de sa colonne.
+              À `md` (768 px), une demi-colonne fait ~340 px, soit une échelle
+              de 0,65 : les libellés de 7 à 13 px du classeur tombent entre 4,5
+              et 8,5 px, c'est-à-dire exactement le calcul qui a imposé une
+              branche mobile séparée. Entre md et lg on reste donc empilé et
+              centré, la scène passant sous le discours à pleine largeur. */}
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            className="text-left"
           >
             {/* Ouverture calquée sur monday.com (client 2026-07-28) : ligne de
                 marque en dégradé discret (comme « monday AI work platform »),
@@ -2008,10 +2132,36 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
                 page vivaient dans les fausses applications d'AtlasMockups et
                 disaient « Bonjour Marie ». Le titre du hero est le titre de la
                 page, il en porte donc le rang. Le hero mobile suit. */}
-            <h1 className="antialiased font-instrument font-normal text-[clamp(2.3rem,5.4vw,4.8rem)] tracking-[-0.035em] leading-[1.03] text-balance text-[#111827] dark:text-white mt-3 text-center">
+            {/* ⚠ DEUX LIGNES, ET LA TAILLE EST CALCULÉE POUR ÇA (client
+                2026-08-29 : « que la phrase soit sur deux lignes, bien plus
+                marquée, bien plus visible et impactante »).
+                Les deux `block` en dessous posent DÉJÀ deux lignes ; ce qui
+                en faisait trois, c'était la seconde qui débordait et se
+                cassait toute seule. « plus d'analyse, plus de conseil. » fait
+                31 signes, soit ~31 x 0,47 x taille en largeur : à 54 px il lui
+                faut 787 px, et la colonne de texte en offre 829 à 1440. Le
+                titre passe donc de 49 à 54 px ET de trois lignes à deux — les
+                deux gains vont dans le même sens, une ligne de moins se lit
+                comme plus assuré.
+                ⚠ LA BORNE DE LARGEUR ET LE PLAFOND DE TAILLE SONT UN COUPLE,
+                pas deux réglages. La seconde ligne tient si et seulement si
+                31 x 0,47 x taille reste sous la largeur disponible :
+                  · 68 rem (1 088 px) de largeur autorisent 74,7 px ;
+                  · 4,6 rem (73,6 px) en demandent 1 072.
+                Les deux valeurs se touchent presque, c'est voulu — le titre est
+                aussi gros que le permet une seconde ligne insécable. Monter
+                l'un sans l'autre le renvoie à trois lignes, ce qui était le
+                défaut à corriger.
+                ⚠ IL A ENCORE GRANDI le 2026-08-29 (66 → 74 px) parce que la
+                réplique est passée EN DESSOUS : le titre ne partage plus sa
+                ligne avec elle, il dispose donc de toute la largeur au lieu de
+                992 px. C'est la même contrainte, appliquée à une place plus
+                grande. La cadence pleine largeur reste inchangée sous lg. */}
+            <h1 className="antialiased font-instrument font-normal text-[clamp(2.3rem,5.4vw,4.8rem)] tracking-[-0.035em] leading-[1.03] text-balance text-[#111827] dark:text-white mt-3 lg:mt-4 lg:max-w-[68rem] lg:text-[clamp(3.2rem,5.4vw,4.6rem)]">
               <span className="block">{t({ fr: "Plus de productivité,", en: "More productivity," })}</span>
               <span className="block text-brand-gradient">{t({ fr: "plus d'analyse, plus de conseil.", en: "more analysis, more advisory." })}</span>
             </h1>
+
             {/* LA PHRASE DIT « LOGICIEL » (client 2026-08-18 : « il faut qu'on
                 comprenne que c'est un logiciel… on comprend en une phrase ce
                 qu'on fait »). L'ancienne (« On s'occupe de vos tâches
@@ -2021,21 +2171,44 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
                 Le patron est celui des sites d'IA juridique : la catégorie,
                 le travail repris, où repart le temps. Modifier ici = modifier
                 OraHeroMobile, qui porte la même phrase au mot près. */}
-            <p className="mt-3 mx-auto max-w-[36rem] font-instrument font-normal text-[clamp(1rem,1.6vw,1.35rem)] leading-normal text-gray-500 dark:text-gray-400 text-center">
+            <p className="mt-5 max-w-[36rem] font-instrument font-normal text-[clamp(1rem,1.6vw,1.35rem)] leading-normal text-gray-500 dark:text-gray-400 lg:mt-6 lg:max-w-[44rem] lg:text-[1.25rem]">
               {t({
                 fr: "Le logiciel qui reprend le répétitif comptable, pour rediriger votre temps vers le conseil.",
                 en: "The software that takes over repetitive accounting work, redirecting your time to advisory.",
               })}
             </p>
-            <a
-              href="https://ora-solution.com/demo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-[#3b82f6] hover:bg-[#2f6fe0] px-9 py-4 font-instrument font-medium text-white text-[17px] shadow-[0_14px_32px_-12px_rgba(59,130,246,0.6)] transition-colors duration-200"
+
+            {/* ══ L'APPEL ET LA PREUVE SUR LA MÊME LIGNE ══════════════════════
+                Client 2026-08-29, capture Softriver à l'appui. C'est leur geste
+                le plus reconnaissable : le bouton ne se tient pas seul au-dessus
+                d'une bande, il partage sa ligne avec les mentions de
+                réassurance. On lit l'appel et ce qui le rend crédible d'un seul
+                regard, au lieu de deux blocs empilés.
+                MESURÉ AVANT DE LE POSER : le bouton fait ~240 px et les quatre
+                mentions ~890, soit 1 170 px pour 1 344 disponibles à 1440 et
+                1 184 à 1280. Ça tient sur une ligne jusqu'à 1280 ; en dessous
+                le `flex-wrap` les renvoie sous le bouton sans rien casser.
+                La bande centrée et son filet, posés la veille d'après Stripe,
+                disparaissent avec : deux références ne se superposent pas, et
+                c'est la plus récente qui tranche. */}
+            <div className="mt-8 flex flex-col items-start gap-6 lg:mt-9 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-9 lg:gap-y-5">
+            {/* ⚠ CE BOUTON MENAIT À LA WEB APP, il mène à la RÉSERVATION
+                (client 2026-08-26 : « enlève tous les boutons qui relient vers
+                la web app »). Il portait « Commencer » vers
+                ora-solution.com/demo, en cible externe — donc le seul appel du
+                hero SORTAIT DU SITE, alors que l'objectif déclaré est la prise
+                de rendez-vous. CLAUDE.md signale cette concurrence de CTA
+                depuis le 2026-08-15 ; elle est close.
+                Le hero garde UN bouton, pas zéro : le supprimer laisserait la
+                première page du site sans appel à l'action. */}
+            <button
+              type="button"
+              onClick={openBooking}
+              className="group inline-flex shrink-0 items-center gap-2.5 rounded-full bg-[#3b82f6] px-9 py-4 font-instrument text-[17px] font-medium text-white shadow-[0_14px_32px_-12px_rgba(59,130,246,0.6)] transition-colors duration-200 hover:bg-[#2563eb]"
             >
-              {t({ fr: "Commencer", en: "Get started" })}
-              <ArrowRight className="w-[18px] h-[18px]" />
-            </a>
+              {t({ fr: "Réserver un appel", en: "Book a call" })}
+              <ArrowRight className="h-[18px] w-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />
+            </button>
             {/* ══ LA RANGÉE DE PREUVE ═════════════════════════════════════════
                 Client 2026-08-21, capture Softriver à l'appui : « il faudrait
                 faire un truc de social proof un peu comme 100 % EU, no LLM or
@@ -2079,7 +2252,32 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
                    « Même fichier, même résultat » est la forme oblique — elle
                    dit exactement ce qui manque à un LLM, sans le nommer et
                    sans rien promettre de plus que ce qui est vrai. */}
-            <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-instrument text-[14.5px] font-normal text-gray-400 dark:text-gray-500">
+            {/* ⚠ ELLE EST SORTIE DE LA COLONNE DE GAUCHE (2026-08-28) et
+                passe en BANDE pleine largeur sous les deux, comme la bande de
+                logos de Stripe. Ses quatre mentions font ~890 px sur une
+                ligne : dans une demi-colonne de 620 px elles tombaient sur
+                trois lignes, ce qui rallongeait le discours de 60 px et
+                déséquilibrait la paire. Elle garde son `justify-center` — le
+                discours est à gauche, mais une bande de fermeture centrée est
+                ce que font les deux références.
+                ⚠ CE QUI LA SÉPARE DE LA DÉMO NE SE RÈGLE PAS ICI, et c'est
+                contre-intuitif : raccourcir son pas du haut la remonte, mais
+                remonte AUSSI tout ce qui suit, réplique comprise. L'écart du
+                bas ne bouge donc pas d'un pixel. Mesuré : 56/47 px avant,
+                40/48 px après — la bande s'est rapprochée du hero sans que la
+                démo se rapproche d'elle, ce qui est exactement le but.
+                Le seul levier sur l'écart du BAS est le `-mt-10` de la piste,
+                et on n'y touche pas : il vient d'une demande explicite du
+                2026-08-14 (« remonte un peu la réplication du logiciel »). Si
+                la bande doit respirer davantage avant la démo, c'est cette
+                valeur-là qu'il faut rouvrir, en connaissance de cause. */}
+            {/* ⚠ NI FILET NI CENTRAGE (2026-08-29). Elle a été une bande
+                centrée sous un trait pendant une passe, d'après Stripe ; elle
+                revient AU FIL DU TEXTE, à la suite du bouton, d'après Softriver
+                — voir le pavé de la rangée juste au-dessus. Le trait n'a plus
+                de sens une fois la rangée à l'intérieur du discours : il
+                séparait un bloc, il couperait maintenant une ligne. */}
+            <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 font-instrument text-[14.5px] font-normal text-gray-400 dark:text-gray-500">
               {[
                 { fort: { fr: "Hébergé en Europe", en: "Hosted in Europe" }, reste: { fr: "Francfort, Genève", en: "Frankfurt, Geneva" } },
                 { fort: { fr: "Hors CLOUD Act", en: "Outside the CLOUD Act" }, reste: { fr: "américain", en: "" } },
@@ -2102,7 +2300,305 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
                 </li>
               ))}
             </ul>
+            </div>
           </motion.div>
+            {/* ── LA COLONNE DU PRODUIT : LA RÉPLIQUE, TAILLÉE PAR L'ÉCRAN ─
+                Client 2026-08-28, capture monday.com à l'appui : « je voudrais
+                simplement cette réplication du logiciel à droite du texte, en
+                plus petit pour s'adapter ».
+
+                C'EST LA MÊME SCÈNE QUE LA GRANDE RÉPLIQUE, OraAppScene, pas
+                une maquette de plus : la même barre latérale, les mêmes douze
+                modules, les mêmes pastilles. Un second dessin à tenir en
+                parallèle aurait divergé au premier changement de produit.
+                HeroSideScene, écrit le 2026-08-26 pour cette place, retourne
+                donc au repos — il reste dans le dépôt, non monté, comme il
+                l'était avant aujourd'hui.
+
+                ⚠ ELLE EST TRANCHÉE PAR LE BORD DE L'ÉCRAN, comme le visuel
+                de Stripe. La passe précédente montrait la scène entière, plus
+                petite ; le client demande maintenant l'inverse — plus grande,
+                dans une mise en page façon Stripe. C'est le même arbitrage
+                pris dans l'autre sens, et il est détaillé au pavé de
+                HERO_APP_SCALE : à 1440, tout montrer coûte 0,45 d'échelle et
+                des libellés à 6 px ; trancher au bord de l'écran permet 0,56,
+                soit 24 % de plus, et rend les intitulés lisibles.
+                Ce qui reste à l'écran est le FLANC GAUCHE — pastille du
+                fichier déposé, barre latérale, salutation, cartes bleues et
+                les premières colonnes d'accès rapide. Les pastilles de sortie
+                partent hors champ à droite : c'est le hors-champ lui-même qui
+                dit qu'il y a davantage.
+
+                ⚠ LA COUPE SE FAIT AU BORD DE L'ÉCRAN, PAS AU BORD DE LA
+                COLONNE : sans ça la fenêtre serait tranchée par une marge
+                invisible au milieu de la page, ce qui se lit comme un
+                débordement raté et non comme un cadrage. Le `overflow-hidden`
+                va avec, il empêche la scène de créer une barre de défilement
+                horizontale.
+
+                ⚠ ET LE DÉBORD NE PEUT PAS S'ÉCRIRE `calc(50% - 50vw)`, la
+                recette habituelle du pleine-largeur. Sur un ÉLÉMENT DE GRILLE,
+                le bloc conteneur est la ZONE DE GRILLE, pas le conteneur
+                centré : les 50 % valaient donc 322 px (la moitié de la colonne)
+                au lieu de 672, et la marge tombait à -398 px. Mesuré : la
+                cellule faisait 1 042 px de large et poussait la page à
+                1 790 px, soit 350 px de défilement horizontal parasite.
+                Le débord est donc calculé DEPUIS LA FENÊTRE, sans pourcentage :
+                48 px de rembourrage de section tant que l'écran est sous
+                90 rem, et la moitié de ce qui dépasse au-delà. Vérifié à 1280
+                (48), 1440 (48) et 1728 (144), débordement nul dans les trois.
+
+                ⚠ `chips="none"`, ET LES DEUX MOITIÉS DE LA RAISON DIFFÈRENT.
+                Les pastilles de SORTIE (rapport généré, lignes contrôlées,
+                synthèse PDF) vivent au flanc DROIT de la scène : dans ce
+                cadrage elles tombent entièrement dans la partie coupée, il n'y
+                a rien à en tirer. Celle d'ENTRÉE, elle, survit à la coupe mais
+                se pose MAL : sa position de mode rogné (`right: calc(100% -
+                196px)`) la ramène par-dessus la barre latérale, où elle
+                recouvre l'entrée « Accueil » — vérifié en capture, ça se lit
+                comme un défaut d'empilement, pas comme une pastille.
+                La référence n'en porte d'ailleurs aucune de ce genre : monday
+                pose une capture propre avec un seul encart DANS la zone de
+                travail. Une pastille correctement replacée serait un réglage à
+                part, à faire dans OraAppScene ; en attendant, aucune.
+                Pour les remettre : `chips="in"` (entrée seule) ou `"all"`. */}
+
+            {/* ══ LA RÉPLIQUE, SOUS LE DISCOURS ET PLEINE LARGEUR ═════════════
+                Client 2026-08-29 : « mets la réplication du logiciel en dessous
+                de la phrase… il faut qu'elle prenne une bonne partie de la
+                largeur de l'écran, sinon le texte en haut à gauche va faire
+                bizarre ». La remarque commande tout le bloc, et elle est juste :
+                un discours aligné à gauche ne se lit comme un parti pris que
+                s'il est suivi d'un objet qui occupe VRAIMENT la largeur. À côté
+                d'une colonne étroite, il n'a l'air que décentré.
+                C'est la mise en page de Softriver : le discours cadré en haut à
+                gauche, puis une rangée qui court d'un bord à l'autre.
+
+                ⚠ CE QUE LE PASSAGE EN DESSOUS FAIT GAGNER. En colonne de
+                droite, la scène disposait de ~1 000 px et sa fenêtre était
+                rendue à 682 px. Sur toute la largeur elle en reçoit 1 440, et
+                la fenêtre monte à ~1 008 px — 85 % de sa taille de composition
+                contre 58 % avant. Les libellés se lisent enfin au lieu de se
+                deviner, et rien n'est coupé.
+
+                ⚠ PLAFOND À 1 626 px, qui est l'empreinte complète de la scène,
+                pastilles comprises. Sans lui, un écran de 1 728 étirerait la
+                fenêtre à 1 210 px, soit AU-DELÀ de ses 1 180 px de composition :
+                on agrandirait un dessin au lieu de le montrer.
+
+                ⚠ 16,5 % / 67 % CENTRE LA FENÊTRE, ET C'EST LE POINT DE CETTE
+                PASSE. À 13/70 elle laissait 187 px de blanc à gauche et 245 à
+                droite : 58 px d'écart, assez pour qu'on la lise comme posée de
+                travers plutôt que cadrée. Le décentrement venait des pastilles
+                elles-mêmes — elles débordent de 188 px à gauche mais de 258 à
+                droite, donc réserver le strict nécessaire de chaque côté
+                décale forcément la fenêtre. En réservant 16,5 % PARTOUT, le
+                surplus va du côté qui en a le moins besoin et la fenêtre
+                retombe au milieu (238 px de chaque côté, mesuré).
+                Ça coûte 43 px de largeur de fenêtre (1 008 → 965). C'est le
+                prix du centrage, et il est payé volontiers : une fenêtre de
+                3 % plus étroite ne se voit pas, 58 px d'asymétrie se voient.
+
+                ⚠ CE QUI RESTE IMPOSSIBLE, pour mémoire. La fenêtre ne peut pas
+                dépasser ~72 % de l'écran tant que les quatre pastilles sont
+                entières ET hors de l'interface : leur empreinte fait 1 626 px
+                pour 1 180 de fenêtre, le rapport est fixe. Aller au-delà
+                demande soit de les couper, soit de les faire mordre sur la
+                barre latérale et sur la grille des modules — les deux ont été
+                essayés et renvoyés. */}
+            {/* ⚠ LA RANGÉE NE DÉBORDE PLUS JUSQU'AU BORD DE L'ÉCRAN, et c'est
+                un renoncement volontaire. Bordée, elle plaçait la pastille du
+                fichier à 11 px du bord gauche — l'alignement texte/pastille
+                obtenu la veille (80 px de part et d'autre) sautait, et la marge
+                gauche à 11 px répondait à une marge droite à 0. Rentrée dans le
+                rembourrage de section, la rangée retrouve deux marges égales et
+                le bord du texte. Elle occupe encore 89 % de l'écran à 1440,
+                ce qui reste « une grande partie de la largeur ». */}
+            {/* ⚠ LA RANGÉE RENTRE DANS LES MARGES, ET C'EST UN DEMI-TOUR
+                ASSUMÉ. Elle débordait jusqu'aux deux bords de l'écran depuis la
+                passe précédente, pour gagner les 160 px de rembourrage.
+                Client 2026-08-29 : « resserre la vidéo sur la gauche et ajoute
+                de l'espace libre pour rendre le site plus minimaliste ». Les
+                deux demandes vont dans le même sens et contre le débord : une
+                composition qui touche les deux bords ne peut pas respirer.
+                Elle repart donc du bord gauche du TEXTE (80 px, l'alignement
+                déjà acquis) et s'arrête avant le bord droit.
+
+                ⚠ LE RETRAIT EST ASYMÉTRIQUE, ET C'EST LE « resserre sur la
+                gauche ». `lg:pr-16` ajoute 64 px à droite et rien à gauche :
+                la marge droite fait donc 144 px contre 80 à gauche. La paire
+                est tirée vers la gauche, l'espace libre s'ouvre à droite, et
+                le tout reste calé sur l'arête du discours au lieu de flotter
+                au milieu.
+
+                ⚠ CE QUE ÇA COÛTE, dit franchement : la fenêtre retombe de 578
+                à ~487 px et la vidéo de 627 à ~528. C'est l'exact inverse de
+                la demande précédente (« plus grands »), et c'est arithmétique
+                — on ne peut pas à la fois occuper toute la largeur et laisser
+                de l'espace libre. La dernière consigne tranche. */}
+            {/* ⚠ LA RANGÉE RESTE DANS LES MARGES (client 2026-08-29 : « remets
+                la marge des deux côtés »). Elle a débordé jusqu'aux bords de
+                l'écran le temps d'une passe, pour gagner les 160 px de
+                rembourrage ; la marge revient des deux côtés, à 80 px, ce qui
+                réaligne le bord gauche des cadres sur celui du texte.
+                Ça coûte ~50 px de largeur à chaque cadre. Le gain de la passe
+                précédente n'est pas perdu pour autant : l'essentiel venait du
+                retrait des pastilles, pas du débord. */}
+            {/* `-mx-4` : 16 px repris sur chaque marge (80 → 64). Le bord des
+                cadres déborde donc LÉGÈREMENT du bord du texte — un outdent de
+                média, pas un désalignement : l'arête du discours reste à 80. */}
+            <div className="mt-16 lg:-mx-4 lg:mt-24">
+              {/* ⚠ LE PLAFOND EST REMONTÉ DE 1 626 À 2 400 px. Il valait
+                  l'empreinte de la scène SEULE (fenêtre + pastilles) du temps
+                  où elle occupait toute la rangée : au-delà, la fenêtre aurait
+                  dépassé ses 1 180 px de composition et on aurait agrandi un
+                  dessin. Depuis qu'elle partage la rangée avec la vidéo elle
+                  n'en occupe plus que 40 %, si bien que la fenêtre ne
+                  atteindrait 1 180 qu'à partir d'une rangée de 2 917 px. Le
+                  vieux plafond ne protégeait donc plus rien : il bridait les
+                  grands écrans pour rien (1 591 px utilisés sur 1 728). */}
+              <div className="mx-auto max-w-[2400px]">
+                {/* ══ DEUX CADRES CÔTE À CÔTE, DE MÊME HAUTEUR ═══════════════
+                    Client 2026-08-29 : « mets la vidéo démo à côté de la
+                    réplication du logiciel pour que ces deux encadrés prennent
+                    une grande partie de la largeur ».
+
+                    ⚠ LES DEUX CADRES FONT EXACTEMENT LA MÊME TAILLE, CÔTE À
+                    CÔTE. Un COLLAGE SUPERPOSÉ a vécu une heure le 2026-08-30
+                    (réplique 62 % en haut à gauche, vidéo 56 % décalée en bas
+                    à droite, recouvrement de ~240 px — c'est le recouvrement
+                    qui payait l'agrandissement, 813 et 735 px de large) et le
+                    client l'a renvoyé le jour même : « je n'aime pas ».
+                    NE PAS LE REPROPOSER ; son détail vit dans l'historique git
+                    à cette date. Retour à la paire égale : deux colonnes 1fr,
+                    même rapport, hauteurs égales toutes seules.
+
+                    ⚠ LE RAPPORT EST PASSÉ DE 1180/720 À 1180/820 le 2026-08-30
+                    (client : « plus large et surtout plus haut »). À largeur
+                    de rangée bornée, la SEULE façon de gagner de la hauteur
+                    sans toucher aux marges est d'allonger la boîte — et
+                    d'accepter que les contenus, qui restent en 1,639, y soient
+                    ROGNÉS :
+                      · la réplique remplit la HAUTEUR et se rogne à droite
+                        (~12 % de la scène : un bout de la troisième colonne
+                        d'accès rapide). Ancrée à GAUCHE, c'est le flanc barre
+                        latérale + salutation + cartes bleues qui reste — le
+                        même choix que le panneau « Contrôles et suivi »
+                        d'AutomationTabs, qui rogne la même scène dans un cadre
+                        depuis le 2026-08-14 ;
+                      · la vidéo, déjà en object-cover, rogne ~8 % de chaque
+                        côté au lieu de 4.
+                    C'est pour rendre ce rognage LISIBLE que la réplique gagne
+                    un vrai cadre (liseré, coins, fond) identique à celui de la
+                    vidéo : une fenêtre coupée au bord d'un cadre se lit comme
+                    un cadrage ; coupée dans le vide, comme un bug — les deux
+                    ont été constatés en capture sur les passes monday.
+
+                    ⚠ `chips="in"` ICI, ET C'EST LA VIDÉO QUI L'IMPOSE. Les
+                    trois pastilles de sortie vivent au flanc DROIT de la
+                    réplique, c'est-à-dire exactement là où la vidéo se tient
+                    désormais : elles lui passeraient dessus. Seule celle
+                    d'entrée reste, à gauche, où rien ne la gêne — et c'est
+                    aussi celle qui porte le propos, le fichier qu'on dépose.
+
+                    ⚠ CE QUE LA PAIRE COÛTE À LA RÉPLIQUE, pour que ce soit
+                    dit : seule et centrée elle affichait une fenêtre de 965 px ;
+                    partagée avec la vidéo elle tombe à ~620. C'est mécanique,
+                    deux objets dans la largeur d'un seul. Le gain est ailleurs,
+                    la rangée montre deux preuves au lieu d'une. */}
+                {/* ⚠ LES PASTILLES SONT RETIRÉES (client 2026-08-29 :
+                    « supprime les petits encadrés qui gravitent autour du
+                    design de réplication »), et c'est ce qui débloque la
+                    taille. Elles coûtaient 38 % de la largeur de la colonne :
+                    188 unités de débord à gauche et 258 à droite pour une
+                    fenêtre de 1 180, qu'il fallait réserver sous peine de les
+                    voir tranchées ou posées sur la vidéo. Sans elles, la
+                    colonne vaut exactement sa fenêtre, et les ~460 px ainsi
+                    rendus vont aux deux cadres.
+                    Le rapport des colonnes suit : 1 pour la réplique contre
+                    1,085 pour la vidéo, qui reste plus haute qu'elle.
+
+                    ⚠ LE DÉCALAGE DE HAUTEUR EST ABANDONNÉ. Il avait été
+                    introduit la veille pour débloquer une impasse de largeur
+                    (une vidéo plus haute prend moins de large à surface égale) ;
+                    la demande d'égalité stricte le rend caduc, et `items-start`
+                    n'a plus rien à rattraper — les deux boîtes sont identiques,
+                    elles s'alignent en haut ET en bas d'elles-mêmes. */}
+                {/* ⚠ L'ÉCART TOMBE À 12 px (client 2026-08-29 : « il faut qu'elles
+                    prennent plus de place en hauteur surtout »). C'est le seul
+                    levier qui reste, et il faut dire pourquoi : à format fixe,
+                    la hauteur d'un cadre EST sa largeur divisée par 1,639. Pour
+                    gagner de la hauteur il faut donc gagner de la largeur, et
+                    la largeur est bornée des deux côtés — par la marge de 80 px
+                    qui aligne les cadres sur le texte (demandée la veille) et
+                    par l'égalité stricte des deux boîtes (demandée aussi).
+                    Ne reste que l'écart entre elles : 20 → 12 px rend 4 px de
+                    largeur et 2 px de hauteur à chacune. Autant dire rien.
+                    LES DEUX VRAIS LEVIERS, si la hauteur compte plus que le
+                    reste : rendre la marge de 80 px (les cadres regagnent
+                    ~50 px de large, soit 30 de haut), ou renoncer à l'égalité
+                    pour recadrer la vidéo en 4/3 (elle gagnerait 100 px de
+                    haut, la réplique rien). */}
+                <div className="relative grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-3">
+                  {/* ── LE ROND DE FOND, CENTRÉ ET EN DÉRIVE ─────────────────
+                      Client 2026-08-29 : « le background du cercle doit bouger
+                      et être au centre ».
+
+                      ⚠ IL EST CENTRÉ PAR `left`, PAS PAR UN `transform`. La
+                      recette habituelle — `left:50%` plus `translateX(-50%)` —
+                      serait ÉCRASÉE ICI : `.hd-heroglow` porte une animation
+                      dont chaque image écrit un `transform` (c'est elle qui le
+                      fait dériver), et une animation en cours l'emporte sur le
+                      transform en ligne. Le rond serait resté collé à droite,
+                      sans erreur nulle part. On centre donc à la main :
+                      `left = (100 - largeur) / 2`, soit 33 % pour 34 %.
+
+                      ⚠ IL BOUGE DÉJÀ, ET IL BOUGEAIT DÉJÀ AVANT : `hdBlobFloat`
+                      le promène de 42 px sur 16 secondes. Ce qui manquait,
+                      c'est qu'on puisse le VOIR bouger — à 24 % de large et
+                      posé derrière la réplique, il était intégralement masqué
+                      par une fenêtre opaque. À 34 % et au centre, il déborde
+                      des deux cadres par le haut et par le bas, et sa dérive
+                      passe dans l'écart qui les sépare. */}
+                  <div
+                    aria-hidden
+                    className="hd-heroglow hidden md:block"
+                    style={{ left: "33%", top: "-18%", width: "34%", aspectRatio: "1" }}
+                  />
+                  <div
+                    className="relative z-10 w-full overflow-hidden rounded-[14px] bg-[#fdfdfb] shadow-[0_24px_60px_-30px_rgba(10,37,64,0.45)] ring-1 ring-[#0a2540]/[0.10] dark:bg-[#111827] dark:ring-white/10"
+                    style={{ aspectRatio: "1180 / 820" }}
+                  >
+                    {/* `h-full` + le rapport natif de la scène : la boîte
+                        interne remplit la hauteur du cadre et déborde à droite,
+                        où le cadre la tranche. Aucun nombre magique : la
+                        largeur se déduit du rapport. */}
+                    <div className="absolute left-0 top-0 h-full" style={{ aspectRatio: "1180 / 720" }}>
+                      <OraAppScene chips="none" />
+                    </div>
+                  </div>
+
+                  {/* La vidéo dans le cadre du site : coins arrondis, liseré
+                      fin, ombre basse — le même habillage que le clip
+                      d'AutomationTabs, pour que les deux se lisent comme le
+                      même objet à deux endroits.
+                      ⚠ POSTER OBLIGATOIRE. `preload="metadata"` ne charge que
+                      l'en-tête : sans image d'attente le cadre reste NOIR le
+                      temps que la vidéo arrive, et c'est le premier écran, sur
+                      fond blanc. */}
+                  <div
+                    className="relative overflow-hidden rounded-[14px] bg-black shadow-[0_24px_60px_-30px_rgba(10,37,64,0.45)] ring-1 ring-[#0a2540]/[0.10] dark:ring-white/10"
+                    style={{ aspectRatio: "1180 / 820" }}
+                  >
+                    <InViewVideo
+                      src={HERO_VIDEO}
+                      poster="/posters/ora-1.jpg"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2126,6 +2622,30 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
             remonte LA PISTE, donc l'état AVANT épinglage, et laisse l'état
             épinglé — `sticky top-0` plus les 88 px — au pixel près où il
             était. L'écart tombe à ~69 px. */}
+        {/* ══ LE DÉZOOM AU DÉFILEMENT NE SE MONTE PLUS ══════════════════════
+            Client 2026-08-28 : « supprime l'animation de dézoom au scroll qui
+            fait que l'on voit plein d'encadrés ».
+
+            CE QUI PART AVEC, et il faut le savoir avant de trancher : ce bloc
+            ne portait pas que le dézoom. Il portait toute la scène épinglée —
+            le classeur Excel avec l'onglet Ora, la vue à deux volets, la
+            réplique du logiciel, PUIS le recul sur le mur de onze panneaux —
+            plus la bande de légendes, le bouton « Lancer la démo » et
+            l'indicateur de défilement. Le dézoom est le mouvement qui relie
+            tout ça ; sans lui la scène n'a plus d'arc, et son écran d'arrivée
+            (la réplique) est désormais dans le hero, à trois cents pixels
+            au-dessus. Le tout descend donc ensemble.
+
+            ⚠ MASQUÉ, PAS SUPPRIMÉ, et c'est le patron déjà en usage dans ce
+            dépôt (le carrousel à onglets d'AtlasShowcase dort derrière un
+            `false &&` depuis le 2026-08-05). Sept cents lignes de JSX et un
+            moteur de défilement réglé au fil de six semaines ne se rejettent
+            pas sur une passe de mise en page : les effets voient leurs refs à
+            `null` et sortent immédiatement, le coût à l'exécution est nul, et
+            la remise en route tient dans un seul mot.
+            POUR LE RÉTABLIR : passer DEZOOM_AU_SCROLL à `true`. */}
+        {DEZOOM_AU_SCROLL && (
+        <>
         <div ref={rideRef} className={`relative md:-mt-10 ${demoOn ? "md:h-[800vh]" : "md:h-[300vh]"}`}>
         {/* `pb` réduit (client 2026-07-30) : descend la bande des légendes d'une
             quinzaine de pixels de plus, sans toucher l'indicateur de défilement
@@ -2819,8 +3339,23 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
           </div>
         </div>
         </div>
+        </>
+        )}
       </div>
 
+      {/* ⚠ CET APPEL PART AVEC LA DÉMO, et pour une raison de rôle, pas de
+          place : il est né « after the demo releases » — c'est la phrase même
+          de son pavé d'origine, conservé ci-dessous. Il fermait les huit
+          écrans de défilement de la scène épinglée en redonnant le bouton au
+          lecteur qui venait de tout regarder.
+          La démo éteinte, il n'a plus rien à fermer : il tombe à deux cents
+          pixels sous le bouton du hero, mot pour mot le même libellé et la
+          même couleur. Deux fois le même appel à un demi-écran d'intervalle,
+          c'est le défaut de « deux CTA qui se disputent » relevé à l'audit du
+          2026-08-15, en pire — ils ne se disputent même pas, ils se répètent.
+          Il suit donc le même interrupteur : si la démo revient, il revient. */}
+      {DEZOOM_AU_SCROLL && (
+      <>
       {/* CTA — after the demo releases. FOND CLAIR (client 2026-08-11) : ce
           conteneur était un bandeau noir permanent, dont le seul rôle était
           d'enchaîner sans couture sur ExcelReveal, alors elle-même toujours
@@ -2847,6 +3382,8 @@ export default function OraHeroDemo({ theme, openBooking }: OraHeroDemoProps) {
           <ArrowRight className="w-5 h-5 transition-transform duration-300 ease-out group-hover:translate-x-1" />
         </motion.button>
       </div>
+      </>
+      )}
     </section>
   );
 }
